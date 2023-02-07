@@ -9,18 +9,6 @@
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
 		"terminal.integrated.shell.linux": "/bin/bash",
-		"sqltools.connections": [
-			{
-				"name": "Container database",
-				"driver": "PostgreSQL",
-				"previewLimit": 50,
-				"server": "localhost",
-				"port": 5432,
-				"database": "postgres",
-				"username": "postgres",
-				"password": "postgres"
-			}
-		],
 		"python.pythonPath": "/usr/local/bin/python",
 		"python.languageServer": "Pylance",
 		"python.linting.enabled": true,
@@ -49,13 +37,10 @@
 	"extensions": [
 		"ms-python.python",
 		"ms-python.vscode-pylance",
-		"mtxr.sqltools",
-		"mtxr.sqltools-driver-pg",
 		"42crunch.vscode-openapi",
 		"eamodio.gitlens",
 		"formulahendry.terminal",
 		"tyriar.terminal-tabs",
-		"alexcvzz.vscode-sqlite",
 		"njpwerner.autodocstring",
 		"arjun.swagger-viewer",
 		"ms-toolsai.jupyter",
