@@ -19,4 +19,22 @@
 # flake8: noqa
 # pylint: skip-file
 
-from work_package_service.api.main import app
+from typing import Any, Dict
+
+from dcs.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
+from dcs.adapters.inbound.fastapi_.routes import router
+from fastapi import FastAPI
+
+app = FastAPI()
+app.include_router(router)
+
+
+def custom_openapi() -> Dict[str, Any]:
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi_schema(app)
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi  # type: ignore [assignment]
