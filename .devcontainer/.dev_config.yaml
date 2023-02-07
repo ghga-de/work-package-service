@@ -9,4 +9,4 @@ cors_allowed_methods: []
 cors_allowed_headers: []
 
 db_connection_str: "mongodb://mongodb:27017"
-db_name: "dev_db"
+db_name: "dev-db"
