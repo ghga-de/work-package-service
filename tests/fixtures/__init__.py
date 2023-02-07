@@ -14,3 +14,14 @@
 # limitations under the License.
 
 """Fixtures that are used in both integration and unit tests"""
+
+from fastapi.testclient import TestClient
+from pytest import fixture
+
+from work_package_service.api.main import app
+
+
+@fixture(name="client")
+def fixture_client() -> TestClient:
+    """Get test client for the work package service"""
+    return TestClient(app)

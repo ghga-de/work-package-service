@@ -14,9 +14,17 @@
 # limitations under the License.
 #
 
-"""Used to define the location of the main FastAPI app object."""
+"""Test the API of the work package service."""
 
-# flake8: noqa
-# pylint: skip-file
+from fastapi import status
 
-from work_package_service.api.main import app
+from .fixtures import fixture_client  # noqa: F401; pylint: disable=unused-import
+
+
+def test_health_check(client):
+    """Test that the health check endpoint works."""
+
+    response = client.get("/health")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"status": "OK"}
