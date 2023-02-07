@@ -21,9 +21,10 @@
 
 from typing import Any, Dict
 
-from dcs.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
-from dcs.adapters.inbound.fastapi_.routes import router
 from fastapi import FastAPI
+
+from wps.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
+from wps.adapters.inbound.fastapi_.routes import router
 
 app = FastAPI()
 app.include_router(router)
