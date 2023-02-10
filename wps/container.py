@@ -12,30 +12,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-"""Used to define the location of the main FastAPI app object."""
+"""Module hosting the dependency injection container."""
 
-# flake8: noqa
-# pylint: skip-file
+from hexkit.inject import ContainerBase, get_configurator, get_constructor
+from hexkit.providers.mongodb import MongoDbDaoFactory
 
-from typing import Any, Dict
-
-from fastapi import FastAPI
-
-from wps.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
-from wps.adapters.inbound.fastapi_.routes import router
-
-app = FastAPI()
-app.include_router(router)
+from wps.adapters.outbound.dao import WorkPackageDaoConstructor
+from wps.config import CONFIG, Config
 
 
-def custom_openapi() -> Dict[str, Any]:
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi_schema(app)
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
+class Container(ContainerBase):
+    """DI Container"""
 
+    config = get_configurator(Config)
 
-app.openapi = custom_openapi  # type: ignore [assignment]
+    # outbound providers:
+    dao_factory = get_constructor(MongoDbDaoFactory, config=config)
+
+    # outbound translators:
+    work_package_dao = get_constructor(
+        WorkPackageDaoConstructor,
+        name=CONFIG.work_packages_collection,
+        dao_factory=dao_factory,
+    )

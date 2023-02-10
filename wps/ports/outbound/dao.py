@@ -14,28 +14,13 @@
 # limitations under the License.
 #
 
-"""Used to define the location of the main FastAPI app object."""
+"""DAO interface for accessing the database."""
 
-# flake8: noqa
-# pylint: skip-file
+# pylint: disable=unused-import
+from hexkit.protocols.dao import DaoSurrogateId  # noqa: F401
+from hexkit.protocols.dao import ResourceNotFoundError  # noqa: F401
 
-from typing import Any, Dict
+from wps.core import models
 
-from fastapi import FastAPI
-
-from wps.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
-from wps.adapters.inbound.fastapi_.routes import router
-
-app = FastAPI()
-app.include_router(router)
-
-
-def custom_openapi() -> Dict[str, Any]:
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi_schema(app)
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
-
-
-app.openapi = custom_openapi  # type: ignore [assignment]
+# port described by a type alias:
+WorkPackageDaoPort = DaoSurrogateId[models.WorkPackage, models.WorkPackageData]

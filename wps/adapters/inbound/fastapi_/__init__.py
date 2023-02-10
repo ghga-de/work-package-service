@@ -14,28 +14,27 @@
 # limitations under the License.
 #
 
-"""Used to define the location of the main FastAPI app object."""
-
-# flake8: noqa
-# pylint: skip-file
+"""Utils to customize the OpenAPI script"""
 
 from typing import Any, Dict
 
-from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 
-from wps.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
-from wps.adapters.inbound.fastapi_.routes import router
+from wps import __version__
+from wps.config import Config
 
-app = FastAPI()
-app.include_router(router)
-
-
-def custom_openapi() -> Dict[str, Any]:
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi_schema(app)
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
+config = Config()
 
 
-app.openapi = custom_openapi  # type: ignore [assignment]
+def get_openapi_schema(api) -> Dict[str, Any]:
+
+    """Generates a custom openapi schema for the service"""
+
+    return get_openapi(
+        title="Work Package Service",
+        version=__version__,
+        description="A service managing work packages for the GHGA CLI",
+        servers=[{"url": config.api_route}],
+        tags=[{"name": "workPackages"}],
+        routes=api.routes,
+    )

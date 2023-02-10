@@ -14,28 +14,5 @@
 # limitations under the License.
 #
 
-"""Used to define the location of the main FastAPI app object."""
-
-# flake8: noqa
-# pylint: skip-file
-
-from typing import Any, Dict
-
-from fastapi import FastAPI
-
-from wps.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
-from wps.adapters.inbound.fastapi_.routes import router
-
-app = FastAPI()
-app.include_router(router)
-
-
-def custom_openapi() -> Dict[str, Any]:
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi_schema(app)
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
-
-
-app.openapi = custom_openapi  # type: ignore [assignment]
+"""Subpackage defining all inbound/primary/driving adapters according to the
+Hexagonal Architecture Concept."""

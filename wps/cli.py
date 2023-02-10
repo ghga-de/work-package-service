@@ -12,30 +12,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-"""Used to define the location of the main FastAPI app object."""
+"""Entrypoint of the package"""
 
-# flake8: noqa
-# pylint: skip-file
+import asyncio
 
-from typing import Any, Dict
+import typer
 
-from fastapi import FastAPI
+from wps.main import run_rest
 
-from wps.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
-from wps.adapters.inbound.fastapi_.routes import router
-
-app = FastAPI()
-app.include_router(router)
+cli = typer.Typer()
 
 
-def custom_openapi() -> Dict[str, Any]:
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi_schema(app)
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
+@cli.command(name="run-rest")
+def sync_run_api():
+    """Run the HTTP REST API."""
 
-
-app.openapi = custom_openapi  # type: ignore [assignment]
+    asyncio.run(run_rest())

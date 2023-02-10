@@ -12,30 +12,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-"""Used to define the location of the main FastAPI app object."""
+"""Config Parameter Modeling and Parsing"""
 
-# flake8: noqa
-# pylint: skip-file
-
-from typing import Any, Dict
-
-from fastapi import FastAPI
-
-from wps.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
-from wps.adapters.inbound.fastapi_.routes import router
-
-app = FastAPI()
-app.include_router(router)
+from ghga_service_chassis_lib.api import ApiConfigBase
+from hexkit.config import config_from_yaml
+from hexkit.providers.mongodb import MongoDbConfig
 
 
-def custom_openapi() -> Dict[str, Any]:
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi_schema(app)
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
+@config_from_yaml(prefix="wps")
+class Config(ApiConfigBase, MongoDbConfig):
+    """Config parameters and their defaults."""
+
+    service_name: str = "wps"
+    api_route = "/api"
+
+    db_name: str = "work-packages"
+
+    work_packages_collection: str = "workPackages"
 
 
-app.openapi = custom_openapi  # type: ignore [assignment]
+CONFIG = Config()

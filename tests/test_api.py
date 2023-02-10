@@ -14,28 +14,17 @@
 # limitations under the License.
 #
 
-"""Used to define the location of the main FastAPI app object."""
+"""Test the API of the work package service."""
 
-# flake8: noqa
-# pylint: skip-file
+from fastapi import status
 
-from typing import Any, Dict
-
-from fastapi import FastAPI
-
-from wps.adapters.inbound.fastapi_.custom_openapi import get_openapi_schema
-from wps.adapters.inbound.fastapi_.routes import router
-
-app = FastAPI()
-app.include_router(router)
+from .fixtures import fixture_client  # noqa: F401; pylint: disable=unused-import
 
 
-def custom_openapi() -> Dict[str, Any]:
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi_schema(app)
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
+def test_health_check(client):
+    """Test that the health check endpoint works."""
 
+    response = client.get("/health")
 
-app.openapi = custom_openapi  # type: ignore [assignment]
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"status": "OK"}
