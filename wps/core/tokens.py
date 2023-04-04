@@ -57,5 +57,4 @@ def sign_work_order_token(
 ):
     """Sign the given work order token."""
     claims = dataclasses.asdict(work_order_token)
-    claims["type"] = claims["type"].value  # use enum value as claim
     return sign_and_serialize_token(claims, key=key, valid_seconds=valid_seconds)

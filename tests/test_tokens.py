@@ -79,5 +79,4 @@ def test_sign_work_order_token():
     assert isinstance(token_dict, dict)
     assert token_dict.pop("exp") - token_dict.pop("iat") == 30
     expected_token_dict = dataclasses.asdict(work_order_token)
-    expected_token_dict["type"] = expected_token_dict["type"].value
     assert token_dict == expected_token_dict

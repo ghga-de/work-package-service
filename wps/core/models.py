@@ -39,7 +39,7 @@ class BaseDto(BaseModel):
         frozen = True
 
 
-class WorkType(Enum):
+class WorkType(str, Enum):
     """The type of work that a work package describes."""
 
     DOWNLOAD = "download"
