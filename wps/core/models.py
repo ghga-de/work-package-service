@@ -48,7 +48,7 @@ class WorkType(str, Enum):
 
 @dataclass(frozen=True)
 class WorkOrderToken:
-    """A class describing a work order token."""
+    """A class describing the payload of a work order token."""
 
     type: WorkType
     file_id: str
