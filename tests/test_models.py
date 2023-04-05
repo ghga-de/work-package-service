@@ -42,7 +42,7 @@ def test_work_package():
         dataset_id="some-dataset-id",
         type=WorkType.DOWNLOAD,
         file_ids=["some-file-id", "another-file-id"],
-        public_key="c29tZS1wdWJsaWMta2V5",
+        user_public_crypt4gh_key="c29tZS1wdWJsaWMta2V5",
         full_user_name="Dr. John Doe",
         email="john@home.org",
         token_hash="308eda9daf26b7446b284449a5895ab9a04ff30c129d4454e471cfb81bf5557d",
