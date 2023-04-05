@@ -86,7 +86,6 @@ class WorkPackageData(WorkPackageCreationData):
     email: EmailStr = Field(default=..., title="E-Mail of the user")
     token_hash: str = Field(
         default=...,
-        title="Hash of thhe token",
         description="Hash of the workpackage access token",
     )
     file_extensions: dict[str, str] = Field(
