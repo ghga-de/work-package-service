@@ -67,9 +67,8 @@ class WorkPackageCreationData(BaseDto):
     dataset_id: str = Field(default=..., title="ID of the dataset")
     type: WorkType = Field(default=..., title="Work type")
     file_ids: list[str] = Field(default=..., title="IDs of all included files")
-    public_key: str = Field(
+    public_c4gh_user_key: str = Field(
         default=...,
-        title="Crpyt4GH key of the user",
         description="The user's public Crpyt4GH key in base64 encoding",
     )
 
