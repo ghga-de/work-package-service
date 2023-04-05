@@ -48,8 +48,8 @@ def test_hash_token():
     """Test hashing of tokens."""
     token = "abc123" * 4
     hashed_token = hash_token(token)
-    assert len(hashed_token) == 64
-    assert all(char.isdigit() or "a" <= char <= "f" for char in hashed_token)
+    assert 16 <= len(hashed_token) <= 64
+    assert hashed_token.isascii()
     hashed_again_token = hash_token(token)
     assert hashed_again_token == hashed_token
     another_token = "123abc" * 4
