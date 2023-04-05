@@ -78,6 +78,7 @@ class WorkPackageData(WorkPackageCreationData):
     All data that describes a work package.
     """
 
+    file_ids: list[str] = Field(default=..., description="IDs of all included files")
     full_user_name: str = Field(
         default=...,
         title="Full name of the user",
