@@ -18,6 +18,7 @@ in the API."""
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from ghga_service_commons.utils.utc_dates import DateTimeUTC
 from pydantic import BaseModel, EmailStr, Field
@@ -59,48 +60,48 @@ class WorkOrderToken:
 
 
 class WorkPackageCreationData(BaseDto):
-    """
-    All data necessary to create a work package.
-    """
+    """All data necessary to create a work package."""
 
-    user_id: str = Field(default=..., title="ID od the user")
-    dataset_id: str = Field(default=..., title="ID of the dataset")
-    type: WorkType = Field(default=..., title="Work type")
-    file_ids: Optional[list[str]] = Field(default=None, description="IDs of all included files. If None, all files of the dataset are assumed as target.")
-    public_c4gh_user_key: str = Field(
+    user_id: str
+    dataset_id: str
+    type: WorkType
+    file_ids: Optional[list[str]] = Field(
+        default=None,
+        description="IDs of all included files."
+        " If None, all files of the dataset are assumed as target.",
+    )
+    user_public_crypt4gh_key: str = Field(
         default=...,
         description="The user's public Crpyt4GH key in base64 encoding",
     )
 
 
 class WorkPackageData(WorkPackageCreationData):
-    """
-    All data that describes a work package.
-    """
+    """All data that describes a work package."""
 
     file_ids: list[str] = Field(default=..., description="IDs of all included files")
+    file_extensions: dict[str, str] = Field(
+        default=...,
+        description="Mapping from file IDs to file extensions",
+    )
     full_user_name: str = Field(
         default=...,
-        title="Full name of the user",
         description="The user's full name including academic title",
     )
-    email: EmailStr = Field(default=..., title="E-Mail of the user")
+    email: EmailStr = Field(default=..., description="E-Mail address of the user")
     token_hash: str = Field(
         default=...,
         description="Hash of the workpackage access token",
     )
-    file_extensions: dict[str, str] = Field(
-        default=...,
-        title="File extensions",
-        description="Mapping from file ids to file extensions",
+    created: DateTimeUTC = Field(
+        default=..., description="Creation date of the work package"
     )
-    created: DateTimeUTC = Field(default=None, title="Date of creation")
-    expires: DateTimeUTC = Field(default=None, title="Date of expiry")
+    expires: DateTimeUTC = Field(
+        default=..., title="Expiration date of the work pacakge"
+    )
 
 
 class WorkPackage(WorkPackageData):
-    """
-    A work package including a unique identifier.
-    """
+    """A work package including a unique identifier."""
 
-    id: str = Field(default=..., title="ID of the work package")
+    id: str = Field(default=..., description="ID of the work package")
