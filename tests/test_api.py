@@ -18,6 +18,9 @@
 
 from fastapi import status
 from ghga_service_commons.utils.jwt_helpers import decode_and_validate_token
+from hexkit.providers.mongodb.testutils import (  # noqa: F401; pylint: disable=unused-import
+    mongodb_fixture,
+)
 from pytest import mark
 
 from .fixtures import (  # noqa: F401; pylint: disable=unused-import

@@ -67,12 +67,13 @@ def fixture_bad_auth_headers() -> dict[str, str]:
 
 
 @async_fixture(name="client")
-async def fixture_client() -> AsyncGenerator[AsyncClient, None]:
+async def fixture_client(mongodb_fixture) -> AsyncGenerator[AsyncClient, None]:
     """Get test client for the work package service"""
 
     config = Config(
         auth_key=AUTH_KEY_PAIR.export_public(),
         work_package_signing_key=SecretStr(SIGNING_KEY_PAIR.export_private()),
+        **mongodb_fixture.config.dict(),
     )
 
     async with get_container(config=config):
