@@ -23,7 +23,7 @@
     },
     "work_package_signing_key": {
       "title": "Work Package Signing Key",
-      "default": "{}",
+      "default": "**********",
       "env_names": [
         "wps_work_package_signing_key"
       ],
