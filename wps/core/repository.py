@@ -167,7 +167,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         if file_id not in work_package.file_ids:
             return None
         public_key = work_package.user_public_crypt4gh_key
-        token = WorkOrderToken(
+        wot = WorkOrderToken(
             type=work_package.type,
             file_id=file_id,
             user_id=work_package.user_id,
@@ -175,5 +175,5 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             full_user_name=work_package.full_user_name,
             email=work_package.email,
         )
-        signed_token = sign_work_order_token(token, self._signing_key)
-        return encrypt(signed_token, public_key)
+        signed_wot = sign_work_order_token(wot, self._signing_key)
+        return encrypt(signed_wot, public_key)

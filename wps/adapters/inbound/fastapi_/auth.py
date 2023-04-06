@@ -23,7 +23,7 @@ from ghga_service_commons.auth.context import AuthContextProtocol
 from ghga_service_commons.auth.ghga import AuthContext, is_active
 from ghga_service_commons.auth.policies import require_auth_context_using_credentials
 
-from wps.container import Container  # type: ignore
+from wps.container import Container
 
 __all__ = ["require_context", "require_token"]
 
@@ -45,7 +45,7 @@ async def require_access_token(
     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=True)),
 ) -> str:
     """Require an access token using FastAPI."""
-    return credentials.credentials if credentials else None
+    return credentials.credentials
 
 
 # policy for requiring and getting an active auth context

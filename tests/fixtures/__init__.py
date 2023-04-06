@@ -15,6 +15,8 @@
 
 """Fixtures that are used in both integration and unit tests"""
 
+from typing import AsyncGenerator
+
 from ghga_service_commons.utils.jwt_helpers import (
     generate_jwk,
     sign_and_serialize_token,
@@ -65,7 +67,7 @@ def fixture_bad_auth_headers() -> dict[str, str]:
 
 
 @async_fixture(name="client")
-async def fixture_client() -> AsyncClient:
+async def fixture_client() -> AsyncGenerator[AsyncClient, None]:
     """Get test client for the work package service"""
 
     config = Config(
