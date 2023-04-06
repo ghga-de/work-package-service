@@ -18,7 +18,27 @@
 Module containing the main FastAPI router and all route functions.
 """
 
-from fastapi import APIRouter, status
+import logging
+
+from dependency_injector.wiring import Provide, inject
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from wps.adapters.inbound.fastapi_.auth import (
+    AuthContext,
+    require_context,
+    require_token,
+)
+from wps.container import Container
+from wps.core.models import (
+    WorkPackageCreationData,
+    WorkPackageCreationResponse,
+    WorkPackageDetails,
+)
+from wps.ports.inbound.repository import WorkPackageRepositoryPort
+
+__all__ = ["router"]
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -26,9 +46,128 @@ router = APIRouter()
 @router.get(
     "/health",
     summary="health",
-    tags=["workPackages"],
+    tags=["WorkPackages"],
     status_code=status.HTTP_200_OK,
 )
 async def health():
     """Used to test if this service is alive"""
     return {"status": "OK"}
+
+
+@router.post(
+    "/work-packages",
+    operation_id="create_work_package",
+    tags=["WorkPackages"],
+    summary="Create a work package",
+    description="Endpoint used to create a new work package",
+    responses={
+        201: {
+            "model": WorkPackageCreationResponse,
+            "description": "Work package was successfully created.",
+        },
+        403: {"description": "Not authorized to create a work package."},
+        422: {"description": "Validation error in submitted user data."},
+    },
+    status_code=201,
+)
+@inject
+async def create_work_package(
+    creation_data: WorkPackageCreationData,
+    repository: WorkPackageRepositoryPort = Depends(
+        Provide[Container.work_package_repository]
+    ),
+    context: AuthContext = require_context,
+) -> WorkPackageCreationResponse:
+    """Create a work package."""
+    return await repository.create(creation_data, context=context)
+
+
+@router.get(
+    "/work-packages/{work_package_id}",
+    operation_id="get_work_package",
+    tags=["WorkPackages"],
+    summary="Get a work package",
+    description="Endpoint used to get work package details",
+    responses={
+        200: {
+            "model": WorkPackageDetails,
+            "description": "Work package details have been found.",
+        },
+        403: {"description": "Not authorized to get the work package."},
+        422: {"description": "Validation error in submitted user data."},
+    },
+    status_code=200,
+)
+@inject
+async def get_work_package(
+    work_package_id: str = Path(
+        ...,
+        alias="work_package_id",
+    ),
+    repository: WorkPackageRepositoryPort = Depends(
+        Provide[Container.work_package_repository]
+    ),
+    token: str = require_token,
+) -> WorkPackageDetails:
+    """Get work package details."""
+    package = (
+        await repository.get(work_package_id, check_valid=True, token=token)
+        if work_package_id and token
+        else None
+    )
+    if not package:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to get the work package."
+        )
+    return WorkPackageDetails(
+        type=package.type,
+        file_ids=package.file_ids,
+        file_extensions=package.file_extensions,
+        created=package.created,
+        expires=package.expires,
+    )
+
+
+@router.post(
+    "/work-packages/{work_package_id}/files/{file_id}/work-order-tokens",
+    operation_id="create_work_order_token",
+    tags=["WorkPackages"],
+    summary="Create a work order token",
+    description="Endpoint used to create a work order token",
+    responses={
+        201: {
+            "description": "Work order token has been created.",
+        },
+        403: {"description": "Not authorized to create the work order token."},
+        422: {"description": "Validation error in submitted user data."},
+    },
+    status_code=201,
+)
+@inject
+async def create_work_order_token(
+    work_package_id: str = Path(
+        ...,
+        alias="work_package_id",
+    ),
+    file_id: str = Path(
+        ...,
+        alias="file_id",
+    ),
+    repository: WorkPackageRepositoryPort = Depends(
+        Provide[Container.work_package_repository]
+    ),
+    token: str = require_token,
+) -> str:
+    """Get an excrypted work order token."""
+    work_order_token = (
+        await repository.work_order_token(
+            work_package_id, file_id, check_valid=True, token=token
+        )
+        if work_package_id and file_id and token
+        else None
+    )
+    if not work_order_token:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to create the work order token."
+        )
+    return work_order_token
