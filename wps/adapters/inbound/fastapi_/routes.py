@@ -110,19 +110,18 @@ async def get_work_package(
     work_package_access_token: str = requires_work_package_access_token,
 ) -> WorkPackageDetails:
     """Get work package details using a work package access token."""
-    package = (
-        await repository.get(
+    try:
+        if not (work_package_id and work_package_access_token):
+            raise repository.WorkPackageAccessError
+        package = await repository.get(
             work_package_id,
             check_valid=True,
             work_package_access_token=work_package_access_token,
         )
-        if work_package_id and work_package_access_token
-        else None
-    )
-    if not package:
+    except repository.WorkPackageAccessError as error:
         raise HTTPException(
             status_code=403, detail="Not authorized to get the work package."
-        )
+        ) from error
     return WorkPackageDetails(
         type=package.type,
         file_ids=package.file_ids,
@@ -163,18 +162,16 @@ async def create_work_order_token(
     work_package_access_token: str = requires_work_package_access_token,
 ) -> str:
     """Get an excrypted work order token using a work package access token."""
-    work_order_token = (
-        await repository.work_order_token(
+    try:
+        if not (work_package_id and file_id and work_package_access_token):
+            raise repository.WorkPackageAccessError
+        return await repository.work_order_token(
             work_package_id,
             file_id,
             check_valid=True,
             work_package_access_token=work_package_access_token,
         )
-        if work_package_id and file_id and work_package_access_token
-        else None
-    )
-    if not work_order_token:
+    except repository.WorkPackageAccessError as error:
         raise HTTPException(
             status_code=403, detail="Not authorized to create the work order token."
-        )
-    return work_order_token
+        ) from error

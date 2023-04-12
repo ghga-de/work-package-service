@@ -25,7 +25,7 @@ from hexkit.providers.mongodb.testutils import (  # noqa: F401; pylint: disable=
     mongodb_fixture,
 )
 from pydantic import SecretStr
-from pytest import mark
+from pytest import mark, raises
 
 from wps.adapters.outbound.dao import WorkPackageDaoConstructor
 from wps.core.models import (
@@ -82,15 +82,15 @@ async def test_work_package_repository(
 
     # retrieve work package
 
-    package = await repository.get(
-        work_package_id, check_valid=True, work_package_access_token="foo"
-    )
-    assert package is None
+    with raises(repository.WorkPackageAccessError):
+        await repository.get(
+            work_package_id, check_valid=True, work_package_access_token="foo"
+        )
 
-    package = await repository.get(
-        "invalid-id", check_valid=True, work_package_access_token=wpat
-    )
-    assert package is None
+    with raises(repository.WorkPackageAccessError):
+        await repository.get(
+            "invalid-id", check_valid=True, work_package_access_token=wpat
+        )
 
     package = await repository.get(
         work_package_id, check_valid=True, work_package_access_token=wpat
@@ -110,20 +110,20 @@ async def test_work_package_repository(
 
     # crate work order token
 
-    wot = await repository.work_order_token(
-        "invalid-work-package-id", "some-file-id", work_package_access_token=wpat
-    )
-    assert wot is None
+    with raises(repository.WorkPackageAccessError):
+        await repository.work_order_token(
+            "invalid-work-package-id", "some-file-id", work_package_access_token=wpat
+        )
 
-    wot = await repository.work_order_token(
-        work_package_id, "invalid-file-id", work_package_access_token=wpat
-    )
-    assert wot is None
+    with raises(repository.WorkPackageAccessError):
+        await repository.work_order_token(
+            work_package_id, "invalid-file-id", work_package_access_token=wpat
+        )
 
-    wot = await repository.work_order_token(
-        work_package_id, "some-file-id", work_package_access_token="invalid-token"
-    )
-    assert wot is None
+    with raises(repository.WorkPackageAccessError):
+        await repository.work_order_token(
+            work_package_id, "some-file-id", work_package_access_token="invalid-token"
+        )
 
     wot = await repository.work_order_token(
         work_package_id, "some-file-id", work_package_access_token=wpat

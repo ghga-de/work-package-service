@@ -31,6 +31,9 @@ from wps.core.models import (
 class WorkPackageRepositoryPort(ABC):
     """A repository for work packages."""
 
+    class WorkPackageAccessError(KeyError):
+        """Error that is raised when a work pacakge cannot be accessed."""
+
     @abstractmethod
     async def create(
         self, creation_data: WorkPackageCreationData, auth_context: AuthContext
@@ -44,10 +47,10 @@ class WorkPackageRepositoryPort(ABC):
         work_package_id: str,
         check_valid: bool = True,
         work_package_access_token: Optional[str] = None,
-    ) -> Optional[WorkPackage]:
+    ) -> WorkPackage:
         """Get a work package with the given ID from the repository.
 
-        In the following cases, the method returns None:
+        In the following cases, a WorkPackageAccessError is raised:
         - if a work package with the given work_package_id does not exist
         - if check_valid is set and the work package has expired
         - if a work_package_access_token is specified and it does not match
@@ -62,10 +65,10 @@ class WorkPackageRepositoryPort(ABC):
         file_id: str,
         check_valid: bool = True,
         work_package_access_token: Optional[str] = None,
-    ) -> Optional[str]:
+    ) -> str:
         """Create a work order token for a given work package and file.
 
-        In the following cases, the method returns None:
+        In the following cases, a WorkPackageAccessError is raised:
         - if a work package with the given work_package_id does not exist
         - if the file_id is not contained in the work package
         - if check_valid is set and the work package has expired

@@ -121,10 +121,10 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         work_package_id: str,
         check_valid: bool = True,
         work_package_access_token: Optional[str] = None,
-    ) -> Optional[WorkPackage]:
+    ) -> WorkPackage:
         """Get a work package with the given ID from the repository.
 
-        In the following cases, the method returns None:
+        In the following cases, a WorkPackageAccessError is raised:
         - if a work package with the given work_package_id does not exist
         - if check_valid is set and the work package has expired
         - if a work_package_access_token is specified and it does not match
@@ -132,17 +132,17 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         """
         try:
             work_package = await self._dao.get_by_id(work_package_id)
-        except ResourceNotFoundError:
-            return None
+        except ResourceNotFoundError as error:
+            raise self.WorkPackageAccessError from error
         if (
             check_valid
             and not work_package.created <= now_as_utc() <= work_package.expires
         ):
-            return None
+            raise self.WorkPackageAccessError
         if work_package_access_token and work_package.token_hash != hash_token(
             work_package_access_token
         ):
-            return None
+            raise self.WorkPackageAccessError
         return work_package
 
     async def work_order_token(
@@ -151,10 +151,10 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         file_id: str,
         check_valid: bool = True,
         work_package_access_token: Optional[str] = None,
-    ) -> Optional[str]:
+    ) -> str:
         """Create a work order token for a given work package and file.
 
-        In the following cases, the method returns None:
+        In the following cases, a WorkPackageAccessError is raised:
         - if the work package does not exist
         - if the file_id is not contained in the work package
         - if check_valid is set and the work package has expired
@@ -166,10 +166,8 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             check_valid=check_valid,
             work_package_access_token=work_package_access_token,
         )
-        if not work_package:
-            return None
         if file_id not in work_package.file_ids:
-            return None
+            raise self.WorkPackageAccessError
         public_key = work_package.user_public_crypt4gh_key
         wot = WorkOrderToken(
             type=work_package.type,
