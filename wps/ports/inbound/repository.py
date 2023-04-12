@@ -33,7 +33,7 @@ class WorkPackageRepositoryPort(ABC):
 
     @abstractmethod
     async def create(
-        self, creation_data: WorkPackageCreationData, context: AuthContext
+        self, creation_data: WorkPackageCreationData, auth_context: AuthContext
     ) -> WorkPackageCreationResponse:
         """Create a work package and store it in the repository."""
         ...
@@ -43,15 +43,15 @@ class WorkPackageRepositoryPort(ABC):
         self,
         work_package_id: str,
         check_valid: bool = True,
-        token: Optional[str] = None,
+        work_package_access_token: Optional[str] = None,
     ) -> Optional[WorkPackage]:
         """Get a work package with the given ID from the repository.
 
         In the following cases, the method returns None:
-        - if the work package does not exist
+        - if a work package with the given work_package_id does not exist
         - if check_valid is set and the work package has expired
-        - if a token is specified and it does not match
-          with what is stored in the work package
+        - if a work_package_access_token is specified and it does not match
+          the token hash that is stored in the work package
         """
         ...
 
@@ -61,15 +61,15 @@ class WorkPackageRepositoryPort(ABC):
         work_package_id: str,
         file_id: str,
         check_valid: bool = True,
-        token: Optional[str] = None,
+        work_package_access_token: Optional[str] = None,
     ) -> Optional[str]:
         """Create a work order token for a given work package and file.
 
         In the following cases, the method returns None:
-        - if the work package does not exist
+        - if a work package with the given work_package_id does not exist
         - if the file_id is not contained in the work package
         - if check_valid is set and the work package has expired
-        - if a token is specified and it does not match
-          with what is stored in the work package
+        - if a work_package_access_token is specified and it does not match
+          the token hash that is stored in the work package
         """
         ...

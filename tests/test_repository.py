@@ -77,18 +77,24 @@ async def test_work_package_repository(
 
     assert isinstance(creation_response, WorkPackageCreationResponse)
     work_package_id = creation_response.id
-    encrypted_token = creation_response.token
-    token = decrypt(encrypted_token)
+    encrypted_wpat = creation_response.token
+    wpat = decrypt(encrypted_wpat)
 
     # retrieve work package
 
-    package = await repository.get(work_package_id, check_valid=True, token="foo")
+    package = await repository.get(
+        work_package_id, check_valid=True, work_package_access_token="foo"
+    )
     assert package is None
 
-    package = await repository.get("invalid-id", check_valid=True, token=token)
+    package = await repository.get(
+        "invalid-id", check_valid=True, work_package_access_token=wpat
+    )
     assert package is None
 
-    package = await repository.get(work_package_id, check_valid=True, token=token)
+    package = await repository.get(
+        work_package_id, check_valid=True, work_package_access_token=wpat
+    )
 
     assert isinstance(package, WorkPackage)
     assert package.dataset_id == "some-dataset-id"
@@ -99,28 +105,28 @@ async def test_work_package_repository(
     assert package.user_id == auth_context.id
     assert package.full_user_name == auth_context.title + " " + auth_context.name
     assert package.email == auth_context.email
-    assert package.token_hash == hash_token(token)
+    assert package.token_hash == hash_token(wpat)
     assert (package.expires - package.created).days == 30
 
     # crate work order token
 
     wot = await repository.work_order_token(
-        "invalid-work-package-id", "some-file-id", token=token
+        "invalid-work-package-id", "some-file-id", work_package_access_token=wpat
     )
     assert wot is None
 
     wot = await repository.work_order_token(
-        work_package_id, "invalid-file-id", token=token
+        work_package_id, "invalid-file-id", work_package_access_token=wpat
     )
     assert wot is None
 
     wot = await repository.work_order_token(
-        work_package_id, "some-file-id", token="invalid-token"
+        work_package_id, "some-file-id", work_package_access_token="invalid-token"
     )
     assert wot is None
 
     wot = await repository.work_order_token(
-        work_package_id, "some-file-id", token=token
+        work_package_id, "some-file-id", work_package_access_token=wpat
     )
     assert wot is not None
 

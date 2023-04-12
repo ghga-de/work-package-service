@@ -78,7 +78,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self._dao = work_package_dao
 
     async def create(
-        self, creation_data: WorkPackageCreationData, context: AuthContext
+        self, creation_data: WorkPackageCreationData, auth_context: AuthContext
     ) -> WorkPackageCreationResponse:
         """Create a work package and store it in the repository."""
 
@@ -89,9 +89,9 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         file_ids = creation_data.file_ids
         file_extensions: dict[str, str] = {}
 
-        full_user_name = context.name
-        if context.title:
-            full_user_name = context.title + " " + full_user_name
+        full_user_name = auth_context.name
+        if auth_context.title:
+            full_user_name = auth_context.title + " " + full_user_name
 
         created = now_as_utc()
         expires = created + self._valid_timedelta
@@ -104,9 +104,9 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             type=creation_data.type,
             file_ids=file_ids,
             file_extensions=file_extensions,
-            user_id=context.id,
+            user_id=auth_context.id,
             full_user_name=full_user_name,
-            email=context.email,
+            email=auth_context.email,
             user_public_crypt4gh_key=creation_data.user_public_crypt4gh_key,
             token_hash=hash_token(token),
             created=created,
@@ -120,15 +120,15 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self,
         work_package_id: str,
         check_valid: bool = True,
-        token: Optional[str] = None,
+        work_package_access_token: Optional[str] = None,
     ) -> Optional[WorkPackage]:
         """Get a work package with the given ID from the repository.
 
         In the following cases, the method returns None:
-        - if the work package does not exist
+        - if a work package with the given work_package_id does not exist
         - if check_valid is set and the work package has expired
-        - if a token is specified and it does not match
-          with what is stored in the work package
+        - if a work_package_access_token is specified and it does not match
+          the token hash that is stored in the work package
         """
         try:
             work_package = await self._dao.get_by_id(work_package_id)
@@ -139,7 +139,9 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             and not work_package.created <= now_as_utc() <= work_package.expires
         ):
             return None
-        if token and work_package.token_hash != hash_token(token):
+        if work_package_access_token and work_package.token_hash != hash_token(
+            work_package_access_token
+        ):
             return None
         return work_package
 
@@ -148,7 +150,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         work_package_id: str,
         file_id: str,
         check_valid: bool = True,
-        token: Optional[str] = None,
+        work_package_access_token: Optional[str] = None,
     ) -> Optional[str]:
         """Create a work order token for a given work package and file.
 
@@ -156,11 +158,13 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         - if the work package does not exist
         - if the file_id is not contained in the work package
         - if check_valid is set and the work package has expired
-        - if a token is specified and it does not match
-          with what is stored in the work package
+        - if a work_package_access_token is specified and it does not match
+          the token hash that is stored in the work package
         """
         work_package = await self.get(
-            work_package_id, check_valid=check_valid, token=token
+            work_package_id,
+            check_valid=check_valid,
+            work_package_access_token=work_package_access_token,
         )
         if not work_package:
             return None

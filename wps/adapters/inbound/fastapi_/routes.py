@@ -25,8 +25,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, status
 
 from wps.adapters.inbound.fastapi_.auth import (
     AuthContext,
-    require_context,
-    require_token,
+    requires_auth_context,
+    requires_work_package_access_token,
 )
 from wps.container import Container
 from wps.core.models import (
@@ -76,10 +76,10 @@ async def create_work_package(
     repository: WorkPackageRepositoryPort = Depends(
         Provide[Container.work_package_repository]
     ),
-    context: AuthContext = require_context,
+    auth_context: AuthContext = requires_auth_context,
 ) -> WorkPackageCreationResponse:
-    """Create a work package."""
-    return await repository.create(creation_data, context=context)
+    """Create a work package using an internal auth token with a user context."""
+    return await repository.create(creation_data, auth_context=auth_context)
 
 
 @router.get(
@@ -107,12 +107,16 @@ async def get_work_package(
     repository: WorkPackageRepositoryPort = Depends(
         Provide[Container.work_package_repository]
     ),
-    token: str = require_token,
+    work_package_access_token: str = requires_work_package_access_token,
 ) -> WorkPackageDetails:
-    """Get work package details."""
+    """Get work package details using a work package access token."""
     package = (
-        await repository.get(work_package_id, check_valid=True, token=token)
-        if work_package_id and token
+        await repository.get(
+            work_package_id,
+            check_valid=True,
+            work_package_access_token=work_package_access_token,
+        )
+        if work_package_id and work_package_access_token
         else None
     )
     if not package:
@@ -156,14 +160,17 @@ async def create_work_order_token(
     repository: WorkPackageRepositoryPort = Depends(
         Provide[Container.work_package_repository]
     ),
-    token: str = require_token,
+    work_package_access_token: str = requires_work_package_access_token,
 ) -> str:
-    """Get an excrypted work order token."""
+    """Get an excrypted work order token using a work package access token."""
     work_order_token = (
         await repository.work_order_token(
-            work_package_id, file_id, check_valid=True, token=token
+            work_package_id,
+            file_id,
+            check_valid=True,
+            work_package_access_token=work_package_access_token,
         )
-        if work_package_id and file_id and token
+        if work_package_id and file_id and work_package_access_token
         else None
     )
     if not work_order_token:

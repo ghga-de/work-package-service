@@ -25,7 +25,7 @@ from ghga_service_commons.auth.policies import require_auth_context_using_creden
 
 from wps.container import Container
 
-__all__ = ["require_context", "require_token"]
+__all__ = ["requires_auth_context", "requires_work_package_access_token"]
 
 
 @inject
@@ -48,8 +48,8 @@ async def require_access_token(
     return credentials.credentials
 
 
-# policy for requiring and getting an active auth context
-require_context = Security(require_active_context)
+# policy that requires (and returns) an active auth context
+requires_auth_context = Security(require_active_context)
 
-# policy for requiring and getting an access token
-require_token = Security(require_access_token)
+# policy that requires (and returns) a work package access token
+requires_work_package_access_token = Security(require_access_token)
