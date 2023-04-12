@@ -34,5 +34,7 @@ class Config(
     db_name: str = "work-packages"
 
     # the default keys are invalid and only set for creating the example configuration
-    auth_key = "{}"  # should be also SecretStr (in ghga-service-commons)
-    work_package_signing_key = SecretStr("{}")
+    # the public key for validating internal auth tokens
+    auth_key: str = "{}"
+    # the private key for signing work package access tokens
+    work_package_signing_key: SecretStr = SecretStr("{}")
