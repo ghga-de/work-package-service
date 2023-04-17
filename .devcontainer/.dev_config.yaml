@@ -10,3 +10,9 @@ cors_allowed_headers: []
 
 db_connection_str: "mongodb://mongodb:27017"
 db_name: "dev-db"
+
+download_access_url: "http://127.0.0.1:8080/download_access"
+
+# the default keys are invalid but set for creating the example specs
+auth_key: "{}"
+work_package_signing_key: "{}"

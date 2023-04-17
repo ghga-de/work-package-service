@@ -31,6 +31,7 @@ from wps.core.models import (
     WorkPackageCreationData,
     WorkPackageCreationResponse,
     WorkPackageData,
+    WorkType,
 )
 from wps.core.tokens import (
     generate_work_package_access_token,
@@ -39,6 +40,7 @@ from wps.core.tokens import (
 )
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
 from wps.ports.outbound.dao import ResourceNotFoundError, WorkPackageDaoPort
+from wps.ports.outbound.http import AccessCheckPort
 
 
 class WorkPackageConfig(BaseSettings):
@@ -66,6 +68,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self,
         *,
         config: WorkPackageConfig,
+        access_check: AccessCheckPort,
         work_package_dao: WorkPackageDaoPort,
     ):
         """Initialize with specific configuration and outbound adapter."""
@@ -75,12 +78,24 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         )
         if not self._signing_key.has_private:
             raise KeyError("No private work order signing key found.")
+        self._access = access_check
         self._dao = work_package_dao
 
+    # pylint: disable=too-many-locals
     async def create(
         self, creation_data: WorkPackageCreationData, auth_context: AuthContext
     ) -> WorkPackageCreationResponse:
         """Create a work package and store it in the repository."""
+
+        user_id = auth_context.id
+        dataset_id = creation_data.dataset_id
+        work_type = creation_data.type
+
+        if (
+            work_type == WorkType.DOWNLOAD
+            and not await self._access.check_download_access(user_id, dataset_id)
+        ):
+            raise self.WorkPackageAccessError("Missing dataset access permission")
 
         # Here we still need to check whether all file IDs are contained
         # in the dataset specified in creation_data,
@@ -100,11 +115,11 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         user_public_crypt4gh_key = creation_data.user_public_crypt4gh_key
 
         work_package_data = WorkPackageData(
-            dataset_id=creation_data.dataset_id,
-            type=creation_data.type,
+            dataset_id=dataset_id,
+            type=work_type,
             file_ids=file_ids,
             file_extensions=file_extensions,
-            user_id=auth_context.id,
+            user_id=user_id,
             full_user_name=full_user_name,
             email=auth_context.email,
             user_public_crypt4gh_key=creation_data.user_public_crypt4gh_key,
@@ -133,16 +148,24 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         try:
             work_package = await self._dao.get_by_id(work_package_id)
         except ResourceNotFoundError as error:
-            raise self.WorkPackageAccessError from error
+            raise self.WorkPackageAccessError("Work package not found") from error
         if (
             check_valid
             and not work_package.created <= now_as_utc() <= work_package.expires
         ):
-            raise self.WorkPackageAccessError
+            raise self.WorkPackageAccessError("Workpackage has expired")
         if work_package_access_token and work_package.token_hash != hash_token(
             work_package_access_token
         ):
-            raise self.WorkPackageAccessError
+            raise self.WorkPackageAccessError("Invalid work package access token")
+        if (
+            check_valid
+            and work_package.type == WorkType.DOWNLOAD
+            and not await self._access.check_download_access(
+                work_package.user_id, work_package.dataset_id
+            )
+        ):
+            raise self.WorkPackageAccessError("Access has been revoked")
         return work_package
 
     async def work_order_token(
@@ -167,7 +190,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             work_package_access_token=work_package_access_token,
         )
         if file_id not in work_package.file_ids:
-            raise self.WorkPackageAccessError
+            raise self.WorkPackageAccessError("File is not contained in work package")
         public_key = work_package.user_public_crypt4gh_key
         wot = WorkOrderToken(
             type=work_package.type,

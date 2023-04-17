@@ -16,6 +16,7 @@ cors_allowed_origins: []
 db_connection_str: '**********'
 db_name: dev-db
 docs_url: /docs
+download_access_url: http://127.0.0.1:8080/download_access
 host: 127.0.0.1
 log_level: info
 openapi_url: /openapi.json
