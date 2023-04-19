@@ -24,6 +24,9 @@ __all__ = ["AccessCheckPort"]
 class AccessCheckPort(ABC):
     """A port for checking access permissions for datasets."""
 
+    class AccessCheckError(RuntimeError):
+        """Raised when the access check failed without result."""
+
     @abstractmethod
     async def check_download_access(self, user_id: str, dataset_id: str) -> bool:
         """Check whether the given user has download access for the given dataset."""

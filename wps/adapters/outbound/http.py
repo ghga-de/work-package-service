@@ -48,11 +48,19 @@ class AccessCheckAdapter(AccessCheckPort):
         url = f"{self._url}/users/{user_id}/datasets/{dataset_id}"
         async with httpx.AsyncClient() as client:
             response = await client.get(url, timeout=TIMEOUT)
-        return response.status_code == 200 and response.json() is True
+        if response.status_code == httpx.codes.OK:
+            return response.json() is True
+        if response.status_code == httpx.codes.NOT_FOUND:
+            return False
+        raise self.AccessCheckError
 
     async def get_datasets_with_download_access(self, user_id: str) -> list[str]:
         """Get all datasets that the given user is allowed to download."""
         url = f"{self._url}/users/{user_id}/datasets"
         async with httpx.AsyncClient() as client:
             response = await client.get(url, timeout=TIMEOUT)
-        return response.json() if response.status_code == 200 else []
+        if response.status_code == httpx.codes.OK:
+            return response.json()
+        if response.status_code == httpx.codes.NOT_FOUND:
+            return []
+        raise self.AccessCheckError
