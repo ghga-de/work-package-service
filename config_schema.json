@@ -53,7 +53,7 @@
     },
     "download_access_url": {
       "title": "Download Access Url",
-      "description": "URL pointing to the internal download access APIprovided by the claims repository.",
+      "description": "URL pointing to the internal download access API.",
       "example": "http://127.0.0.1/download_access",
       "env_names": [
         "wps_download_access_url"
