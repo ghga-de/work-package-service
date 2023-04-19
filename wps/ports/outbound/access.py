@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-"""Outbound HTTP ports"""
+"""Outbound access checks"""
 
 from abc import ABC, abstractmethod
 

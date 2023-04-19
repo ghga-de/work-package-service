@@ -14,12 +14,12 @@
 # limitations under the License.
 #
 
-"""Outbound HTTP calls """
+"""Outbound HTTP calls"""
 
 import httpx
 from pydantic import BaseSettings, Field
 
-from wps.ports.outbound.http import AccessCheckPort
+from wps.ports.outbound.access import AccessCheckPort
 
 __all__ = ["AccessCheckConfig", "AccessCheckAdapter"]
 
@@ -40,7 +40,7 @@ class AccessCheckAdapter(AccessCheckPort):
     """An adapter for checking access permissions for datasets."""
 
     def __init__(self, *, config: AccessCheckConfig):
-        """Configure the access adadapter."""
+        """Configure the access adapter."""
         self._url = config.download_access_url
 
     async def check_download_access(self, user_id: str, dataset_id: str) -> bool:

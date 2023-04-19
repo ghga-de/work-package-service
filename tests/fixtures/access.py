@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from wps.ports.outbound.http import AccessCheckPort
+from wps.ports.outbound.access import AccessCheckPort
 
 USERS_WITH_DOWNLOAD_ACCESS = ["john-doe@ghga.de"]
 DATASETS_WITH_DOWNLOAD_ACCESS = ["some-dataset-id"]

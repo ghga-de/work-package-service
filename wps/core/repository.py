@@ -39,8 +39,8 @@ from wps.core.tokens import (
     sign_work_order_token,
 )
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
+from wps.ports.outbound.access import AccessCheckPort
 from wps.ports.outbound.dao import ResourceNotFoundError, WorkPackageDaoPort
-from wps.ports.outbound.http import AccessCheckPort
 
 
 class WorkPackageConfig(BaseSettings):
