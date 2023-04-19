@@ -47,7 +47,7 @@ class WorkPackageConfig(BaseSettings):
     """Config parameters needed for the WorkPackageRepository."""
 
     work_packages_collection: str = Field(
-        "workPacakges",
+        "workPackages",
         description="The name of the database collection for work packages",
     )
     work_package_valid_days: int = Field(
@@ -88,14 +88,16 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         """Create a work package and store it in the repository."""
 
         user_id = auth_context.id
+        if user_id is None:
+            raise self.WorkPackageAccessError("Missing user context")
         dataset_id = creation_data.dataset_id
         work_type = creation_data.type
 
-        if (
-            work_type == WorkType.DOWNLOAD
-            and not await self._access.check_download_access(user_id, dataset_id)
-        ):
-            raise self.WorkPackageAccessError("Missing dataset access permission")
+        if work_type == WorkType.DOWNLOAD:
+            if not await self._access.check_download_access(user_id, dataset_id):
+                raise self.WorkPackageAccessError("Missing dataset access permission")
+        else:
+            raise NotImplementedError("Unsupported work type")
 
         # Here we still need to check whether all file IDs are contained
         # in the dataset specified in creation_data,
@@ -149,23 +151,20 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             work_package = await self._dao.get_by_id(work_package_id)
         except ResourceNotFoundError as error:
             raise self.WorkPackageAccessError("Work package not found") from error
-        if (
-            check_valid
-            and not work_package.created <= now_as_utc() <= work_package.expires
-        ):
-            raise self.WorkPackageAccessError("Workpackage has expired")
         if work_package_access_token and work_package.token_hash != hash_token(
             work_package_access_token
         ):
             raise self.WorkPackageAccessError("Invalid work package access token")
-        if (
-            check_valid
-            and work_package.type == WorkType.DOWNLOAD
-            and not await self._access.check_download_access(
-                work_package.user_id, work_package.dataset_id
-            )
-        ):
-            raise self.WorkPackageAccessError("Access has been revoked")
+        if check_valid:
+            if not work_package.created <= now_as_utc() <= work_package.expires:
+                raise self.WorkPackageAccessError("Work package has expired")
+            if work_package.type == WorkType.DOWNLOAD:
+                if not await self._access.check_download_access(
+                    work_package.user_id, work_package.dataset_id
+                ):
+                    raise self.WorkPackageAccessError("Access has been revoked")
+            else:
+                raise NotImplementedError("Cannot validate unsupported work type")
         return work_package
 
     async def work_order_token(
