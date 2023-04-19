@@ -32,8 +32,7 @@ class AccessCheckConfig(BaseSettings):
     download_access_url: str = Field(
         ...,
         example="http://127.0.0.1/download_access",
-        description="URL pointing to the internal download access API"
-        "provided by the claims repository.",
+        description="URL pointing to the internal download access API.",
     )
 
 
