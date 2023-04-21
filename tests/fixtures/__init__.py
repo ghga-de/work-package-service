@@ -22,7 +22,8 @@ from ghga_service_commons.utils.jwt_helpers import (
     generate_jwk,
     sign_and_serialize_token,
 )
-from hexkit.providers.akafka import KafkaEventPublisher
+from hexkit.providers.akafka.testutils import KafkaFixture
+from hexkit.providers.mongodb.testutils import MongoDbFixture
 from httpx import AsyncClient
 from pydantic import SecretStr
 from pytest import fixture
@@ -89,27 +90,13 @@ def non_mocked_hosts() -> list[str]:
     return ["test"]
 
 
-async def publish_datasets(container: Container) -> None:
-    """Publish datasets to populate the database."""
-    config = container.config()
-    async with KafkaEventPublisher.construct(config=config) as event_publisher:
-        await event_publisher.publish(
-            payload=DATASET_OVERVIEW_EVENT.dict(),
-            type_="metadata_dataset_overview",
-            key="test_key",
-            topic="metadata",
-        )
-
-    event_subscriber = await container.event_subscriber()
-    await asyncio.wait_for(event_subscriber.run(forever=False), timeout=5)
-
-
 @async_fixture(name="container")
 async def fixture_container(
-    mongodb_fixture, kafka_fixture
+    mongodb_fixture: MongoDbFixture, kafka_fixture: KafkaFixture
 ) -> AsyncGenerator[Container, None]:
     """Populate database and get configured container"""
 
+    # create configuration for testing
     config = Config(
         auth_key=AUTH_KEY_PAIR.export_public(),
         download_access_url="http://access",
@@ -118,8 +105,20 @@ async def fixture_container(
         **mongodb_fixture.config.dict(),
     )
 
+    # publish an event announcing a dataset
     async with get_container(config=config) as container:
-        await publish_datasets(container)
+        await kafka_fixture.publisher.publish(
+            payload=DATASET_OVERVIEW_EVENT.dict(),
+            type_="metadata_dataset_overview",
+            key="test_key",
+            topic="metadata",
+        )
+
+        # populate database with published dataset
+        event_subscriber = await container.event_subscriber()
+        await asyncio.wait_for(event_subscriber.run(forever=False), timeout=5)
+
+        # return the configured and wired container
         yield container
 
 
