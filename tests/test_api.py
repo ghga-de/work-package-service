@@ -18,16 +18,20 @@
 
 from fastapi import status
 from ghga_service_commons.utils.jwt_helpers import decode_and_validate_token
-from hexkit.providers.mongodb.testutils import (  # noqa: F401; pylint: disable=unused-import
+from hexkit.providers.akafka.testutils import (  # noqa: F401 # pylint: disable=unused-import
+    kafka_fixture,
+)
+from hexkit.providers.mongodb.testutils import (  # noqa: F401 # pylint: disable=unused-import
     mongodb_fixture,
 )
 from pytest import mark
 
-from .fixtures import (  # noqa: F401; pylint: disable=unused-import
+from .fixtures import (  # noqa: F401 # pylint: disable=unused-import
     SIGNING_KEY_PAIR,
     fixture_auth_headers,
     fixture_bad_auth_headers,
     fixture_client,
+    fixture_container,
     headers_for_token,
     non_mocked_hosts,
 )
@@ -36,7 +40,7 @@ from .fixtures.crypt import decrypt, user_public_crypt4gh_key
 CREATION_DATA = {
     "dataset_id": "some-dataset-id",
     "type": "download",
-    "file_ids": ["file1-id", "file2-id"],
+    "file_ids": ["file-id-1", "file-id-3", "file-id-5"],
     "user_public_crypt4gh_key": user_public_crypt4gh_key,
 }
 
@@ -65,7 +69,7 @@ async def test_create_work_package_unauthorized(client, bad_auth_headers):
 
 @mark.asyncio
 async def test_get_work_package_unauthorized(client):
-    """Test that gettings a work package needs authorization."""
+    """Test that getting a work package needs authorization."""
 
     response = await client.get("/work-packages/some-work-package-id")
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -85,13 +89,9 @@ async def test_create_work_order_token(client, auth_headers, httpx_mock):
 
     # create a work package
 
-    data = {
-        "dataset_id": "some-dataset-id",
-        "type": "download",
-        "file_ids": ["file1-id", "file2-id"],
-        "user_public_crypt4gh_key": user_public_crypt4gh_key,
-    }
-    response = await client.post("/work-packages", json=data, headers=auth_headers)
+    response = await client.post(
+        "/work-packages", json=CREATION_DATA, headers=auth_headers
+    )
     assert response.status_code == status.HTTP_201_CREATED
 
     response_data = response.json()
@@ -118,7 +118,7 @@ async def test_create_work_order_token(client, auth_headers, httpx_mock):
     # try to get a non-existing work package with authorization
 
     response = await client.get(
-        "/work-packages/some-workpackage-id", headers=headers_for_token(token)
+        "/work-packages/some-work-package-id", headers=headers_for_token(token)
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -142,21 +142,29 @@ async def test_create_work_order_token(client, auth_headers, httpx_mock):
     assert response_data.pop("created") < response_data.pop("expires")
     assert response_data == {
         "type": "download",
-        "file_ids": ["file1-id", "file2-id"],
-        "file_extensions": {},
+        "file_ids": ["file-id-1", "file-id-3"],
+        "file_extensions": {"file-id-1": ".json", "file-id-3": ".bam"},
     }
 
     # try to get a work order token without authorization
 
     response = await client.post(
-        f"/work-packages/{work_package_id}/files/file1-id/work-order-tokens"
+        f"/work-packages/{work_package_id}/files/file-id-1/work-order-tokens"
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     # try to get a work order token for a non-existing work package with authorization
 
     response = await client.post(
-        "/work-packages/some-bad-id/files/file1-id/work-order-tokens",
+        "/work-packages/some-bad-id/files/file-id-1/work-order-tokens",
+        headers=headers_for_token(token),
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    # try to get a work order token for a non-requested file with authorization
+
+    response = await client.post(
+        f"/work-packages/{work_package_id}/files/file-id-2/work-order-tokens",
         headers=headers_for_token(token),
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -164,7 +172,7 @@ async def test_create_work_order_token(client, auth_headers, httpx_mock):
     # try to get a work order token for a non-existing file with authorization
 
     response = await client.post(
-        f"/work-packages/{work_package_id}/files/file3-id/work-order-tokens",
+        f"/work-packages/{work_package_id}/files/file-id-5/work-order-tokens",
         headers=headers_for_token(token),
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -172,7 +180,7 @@ async def test_create_work_order_token(client, auth_headers, httpx_mock):
     # get a work order token for an existing file with authorization
 
     response = await client.post(
-        f"/work-packages/{work_package_id}/files/file2-id/work-order-tokens",
+        f"/work-packages/{work_package_id}/files/file-id-3/work-order-tokens",
         headers=headers_for_token(token),
     )
     assert response.status_code == status.HTTP_201_CREATED
@@ -201,7 +209,8 @@ async def test_create_work_order_token(client, auth_headers, httpx_mock):
     assert token_dict.pop("exp") - token_dict.pop("iat") == 30
     assert token_dict == {
         "type": "download",
-        "file_id": "file2-id",
+        "file_id": "file-id-3",
+        "file_ext": ".bam",
         "user_id": "john-doe@ghga.de",
         "public_key": user_public_crypt4gh_key,
         "full_user_name": "Dr. John Doe",

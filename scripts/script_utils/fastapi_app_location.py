@@ -23,8 +23,8 @@ from typing import Any, Dict
 
 from fastapi import FastAPI
 
-from wps.adapters.inbound.fastapi_.openapi import get_openapi_schema
-from wps.adapters.inbound.fastapi_.routes import router
+from wps.adapters.inbound.http.openapi import get_openapi_schema
+from wps.adapters.inbound.http.routes import router
 
 app = FastAPI()
 app.include_router(router)

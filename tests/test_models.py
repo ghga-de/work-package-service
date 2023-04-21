@@ -36,6 +36,7 @@ def test_work_order_token():
     token = WorkOrderToken(
         type=WorkType.DOWNLOAD,
         file_id="some-file-id",
+        file_ext=".some-ext",
         user_id="some-user-id",
         public_key="some-public-key",
         full_user_name="Dr. John Doe",
@@ -93,7 +94,7 @@ def test_bad_creation_data():
 def test_work_package():
     """Test instantiating a work package DTO."""
     package = WorkPackage(
-        id="some-workpackage-id",
+        id="some-work-package-id",
         user_id="some-user-id",
         dataset_id="some-dataset-id",
         type=WorkType.DOWNLOAD,
@@ -106,7 +107,7 @@ def test_work_package():
         created=datetime(2022, 2, 2, 2, tzinfo=timezone.utc),
         expires=datetime(2022, 2, 2, 3, tzinfo=timezone.utc),
     )
-    assert package.id == "some-workpackage-id"
+    assert package.id == "some-work-package-id"
     assert package.full_user_name == "Dr. John Doe"
     assert package.file_extensions["another-file-id"] == ".bam"
     assert (package.expires - package.created).seconds == 60 * 60
