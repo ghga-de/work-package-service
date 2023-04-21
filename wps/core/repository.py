@@ -134,7 +134,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise self.WorkPackageAccessError("No existing files have been specified")
 
         file_id_set = set(file_ids)
-        file_extensions: dict[str, str] = {
+        files = {
             file.id: file.extension for file in dataset.files if file.id in file_id_set
         }
 
@@ -151,8 +151,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         work_package_data = WorkPackageData(
             dataset_id=dataset_id,
             type=work_type,
-            file_ids=file_ids,
-            file_extensions=file_extensions,
+            files=files,
             user_id=user_id,
             full_user_name=full_user_name,
             email=auth_context.email,
@@ -220,13 +219,13 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             check_valid=check_valid,
             work_package_access_token=work_package_access_token,
         )
-        if file_id not in work_package.file_ids:
+        if file_id not in work_package.files:
             raise self.WorkPackageAccessError("File is not contained in work package")
         public_key = work_package.user_public_crypt4gh_key
         wot = WorkOrderToken(
             type=work_package.type,
             file_id=file_id,
-            file_ext=work_package.file_extensions.get(file_id, ".raw"),
+            file_ext=work_package.files[file_id],
             user_id=work_package.user_id,
             public_key=public_key,
             full_user_name=work_package.full_user_name,

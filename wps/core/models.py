@@ -117,10 +117,9 @@ class WorkPackageDetails(BaseModel):
     """Details about the work package that can be requested."""
 
     type: WorkType
-    file_ids: list[str] = Field(default=..., description="IDs of all included files")
-    file_extensions: dict[str, str] = Field(
+    files: dict[str, str] = Field(
         default=...,
-        description="Mapping from file IDs to file extensions",
+        description="IDs of all included files mapped to their file extensions",
     )
     created: DateTimeUTC = Field(
         default=..., description="Creation date of the work package"

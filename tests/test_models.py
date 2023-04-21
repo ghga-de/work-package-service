@@ -98,16 +98,15 @@ def test_work_package():
         user_id="some-user-id",
         dataset_id="some-dataset-id",
         type=WorkType.DOWNLOAD,
-        file_ids=["some-file-id", "another-file-id"],
+        files={"some-file-id": ".sam", "another-file-id": ".bam"},
         user_public_crypt4gh_key=user_public_crypt4gh_key,
         full_user_name="Dr. John Doe",
         email="john@home.org",
         token_hash="308eda9daf26b7446b284449a5895ab9a04ff30c129d4454e471cfb81bf5557d",
-        file_extensions={"some-file-id": ".sam", "another-file-id": ".bam"},
         created=datetime(2022, 2, 2, 2, tzinfo=timezone.utc),
         expires=datetime(2022, 2, 2, 3, tzinfo=timezone.utc),
     )
     assert package.id == "some-work-package-id"
     assert package.full_user_name == "Dr. John Doe"
-    assert package.file_extensions["another-file-id"] == ".bam"
+    assert package.files["another-file-id"] == ".bam"
     assert (package.expires - package.created).seconds == 60 * 60

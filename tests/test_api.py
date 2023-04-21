@@ -134,16 +134,14 @@ async def test_create_work_order_token(client, auth_headers, httpx_mock):
     assert sorted(response_data) == [
         "created",
         "expires",
-        "file_extensions",
-        "file_ids",
+        "files",
         "type",
     ]
 
     assert response_data.pop("created") < response_data.pop("expires")
     assert response_data == {
         "type": "download",
-        "file_ids": ["file-id-1", "file-id-3"],
-        "file_extensions": {"file-id-1": ".json", "file-id-3": ".bam"},
+        "files": {"file-id-1": ".json", "file-id-3": ".bam"},
     }
 
     # try to get a work order token without authorization

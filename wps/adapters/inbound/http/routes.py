@@ -125,8 +125,7 @@ async def get_work_package(
         raise HTTPException(status_code=403, detail=str(error)) from error
     return WorkPackageDetails(
         type=package.type,
-        file_ids=package.file_ids,
-        file_extensions=package.file_extensions,
+        files=package.files,
         created=package.created,
         expires=package.expires,
     )

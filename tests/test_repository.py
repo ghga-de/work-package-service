@@ -113,8 +113,7 @@ async def test_work_package_repository(
     assert isinstance(package, WorkPackage)
     assert package.dataset_id == "some-dataset-id"
     assert package.type == WorkType.DOWNLOAD
-    assert package.file_ids == ["file-id-1", "file-id-2", "file-id-3"]
-    assert package.file_extensions == {
+    assert package.files == {
         "file-id-1": ".json",
         "file-id-2": ".csv",
         "file-id-3": ".bam",
