@@ -123,7 +123,7 @@ async def fixture_container(
 
 
 @async_fixture(name="client")
-async def fixture_client(container) -> AsyncGenerator[AsyncClient, None]:
+async def fixture_client(container: Container) -> AsyncGenerator[AsyncClient, None]:
     """Get test client for the work package service"""
 
     config = container.config()
