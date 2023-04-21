@@ -107,7 +107,7 @@ async def fixture_container(
 
     # publish an event announcing a dataset
     async with get_container(config=config) as container:
-        await kafka_fixture.publisher.publish(
+        await kafka_fixture.publish_event(
             payload=DATASET_OVERVIEW_EVENT.dict(),
             type_="metadata_dataset_overview",
             key="test_key",
