@@ -16,67 +16,43 @@
 
 """Test the Work Package Repository."""
 
-from datetime import timedelta
-
 from ghga_service_commons.auth.ghga import AuthContext
 from ghga_service_commons.utils.jwt_helpers import decode_and_validate_token
-from ghga_service_commons.utils.utc_dates import now_as_utc
 from hexkit.providers.mongodb.testutils import (  # noqa: F401; pylint: disable=unused-import
+    MongoDbFixture,
     mongodb_fixture,
 )
-from pydantic import SecretStr
 from pytest import mark, raises
 
-from wps.adapters.outbound.dao import DatasetDaoConstructor, WorkPackageDaoConstructor
 from wps.core.models import (
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
     WorkType,
 )
-from wps.core.repository import WorkPackageConfig, WorkPackageRepository
+from wps.core.repository import WorkPackageRepository
 from wps.core.tokens import hash_token
 
-from .fixtures import AUTH_CLAIMS, SIGNING_KEY_PAIR
-from .fixtures.access import AccessCheckMock
+from .fixtures import (  # noqa: F401 # pylint: disable=unused-import
+    SIGNING_KEY_PAIR,
+    fixture_auth_context,
+    fixture_repository,
+)
 from .fixtures.crypt import decrypt, user_public_crypt4gh_key
 from .fixtures.datasets import DATASET
 
-work_package_config = WorkPackageConfig(
-    work_package_signing_key=SecretStr(SIGNING_KEY_PAIR.export_private()),
-)
 
-
+# pylint: disable=too-many-statements
 @mark.asyncio
-async def test_work_package_repository(
-    mongodb_fixture,  # noqa: F811  pylint:disable=redefined-outer-name
+async def test_work_package_and_token_creation(
+    repository: WorkPackageRepository, auth_context: AuthContext
 ):
     """Test creating a work package and a work order token"""
-
-    # create repository
-
-    dataset_dao = await DatasetDaoConstructor.construct(
-        config=work_package_config,
-        dao_factory=mongodb_fixture.dao_factory,
-    )
-    work_package_dao = await WorkPackageDaoConstructor.construct(
-        config=work_package_config,
-        dao_factory=mongodb_fixture.dao_factory,
-    )
-    repository = WorkPackageRepository(
-        config=work_package_config,
-        access_check=AccessCheckMock(),
-        dataset_dao=dataset_dao,
-        work_package_dao=work_package_dao,
-    )
 
     # announce dataset
     await repository.register_dataset(DATASET)
 
     # create work package for all files
-
-    iat = now_as_utc() - timedelta(1)  # validity is assumed by the repository
-    auth_context = AuthContext(**AUTH_CLAIMS, iat=iat, exp=iat)  # pylance: ignore
 
     creation_data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
@@ -85,7 +61,9 @@ async def test_work_package_repository(
         user_public_crypt4gh_key=user_public_crypt4gh_key,
     )
 
-    creation_response = await repository.create(creation_data, auth_context)
+    creation_response = await repository.create(
+        creation_data=creation_data, auth_context=auth_context
+    )
 
     assert isinstance(creation_response, WorkPackageCreationResponse)
     work_package_id = creation_response.id
@@ -129,21 +107,29 @@ async def test_work_package_repository(
 
     with raises(repository.WorkPackageAccessError):
         await repository.work_order_token(
-            "invalid-work-package-id", "file-id-1", work_package_access_token=wpat
+            work_package_id="invalid-work-package-id",
+            file_id="file-id-1",
+            work_package_access_token=wpat,
         )
 
     with raises(repository.WorkPackageAccessError):
         await repository.work_order_token(
-            work_package_id, "invalid-file-id", work_package_access_token=wpat
+            work_package_id=work_package_id,
+            file_id="invalid-file-id",
+            work_package_access_token=wpat,
         )
 
     with raises(repository.WorkPackageAccessError):
         await repository.work_order_token(
-            work_package_id, "file-id-1", work_package_access_token="invalid-token"
+            work_package_id=work_package_id,
+            file_id="file-id-1",
+            work_package_access_token="invalid-token",
         )
 
     wot = await repository.work_order_token(
-        work_package_id, "file-id-3", work_package_access_token=wpat
+        work_package_id=work_package_id,
+        file_id="file-id-3",
+        work_package_access_token=wpat,
     )
     assert wot is not None
 
@@ -164,9 +150,6 @@ async def test_work_package_repository(
 
     # create another work package for specific files
 
-    iat = now_as_utc() - timedelta(1)  # validity is assumed by the repository
-    auth_context = AuthContext(**AUTH_CLAIMS, iat=iat, exp=iat)
-
     creation_data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
         type=WorkType.DOWNLOAD,
@@ -174,7 +157,9 @@ async def test_work_package_repository(
         user_public_crypt4gh_key=user_public_crypt4gh_key,
     )
 
-    creation_response = await repository.create(creation_data, auth_context)
+    creation_response = await repository.create(
+        creation_data=creation_data, auth_context=auth_context
+    )
 
     assert isinstance(creation_response, WorkPackageCreationResponse)
     work_package_id = creation_response.id
@@ -185,16 +170,22 @@ async def test_work_package_repository(
 
     with raises(repository.WorkPackageAccessError):
         await repository.work_order_token(
-            work_package_id, "non-existing-file", work_package_access_token=wpat
+            work_package_id=work_package_id,
+            file_id="non-existing-file",
+            work_package_access_token=wpat,
         )
 
     with raises(repository.WorkPackageAccessError):
         await repository.work_order_token(
-            work_package_id, "file-id-2", work_package_access_token=wpat
+            work_package_id=work_package_id,
+            file_id="file-id-2",
+            work_package_access_token=wpat,
         )
 
     wot = await repository.work_order_token(
-        work_package_id, "file-id-1", work_package_access_token=wpat
+        work_package_id=work_package_id,
+        file_id="file-id-1",
+        work_package_access_token=wpat,
     )
     assert wot is not None
 
@@ -212,3 +203,22 @@ async def test_work_package_repository(
         "full_user_name": package.full_user_name,
         "email": package.email,
     }
+
+
+@mark.asyncio
+async def test_checking_accessible_datasets(
+    repository: WorkPackageRepository, auth_context: AuthContext
+):
+    """Test checking the accessibility of datasets"""
+
+    with raises(repository.DatasetNotFoundError):
+        await repository.get_dataset("some-dataset_id")
+
+    assert await repository.get_datasets(auth_context=auth_context) == []
+
+    # announce dataset
+    await repository.register_dataset(DATASET)
+
+    assert await repository.get_dataset("some-dataset-id") == DATASET
+
+    assert await repository.get_datasets(auth_context=auth_context) == [DATASET]

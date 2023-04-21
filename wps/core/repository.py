@@ -94,7 +94,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
     # pylint: disable=too-many-locals
     async def create(
-        self, creation_data: WorkPackageCreationData, auth_context: AuthContext
+        self, *, creation_data: WorkPackageCreationData, auth_context: AuthContext
     ) -> WorkPackageCreationResponse:
         """Create a work package and store it in the repository.
 
@@ -167,6 +167,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     async def get(
         self,
         work_package_id: str,
+        *,
         check_valid: bool = True,
         work_package_access_token: Optional[str] = None,
     ) -> WorkPackage:
@@ -195,11 +196,12 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 ):
                     raise self.WorkPackageAccessError("Access has been revoked")
             else:
-                raise NotImplementedError("Cannot validate unsupported work type")
+                raise self.WorkPackageAccessError("Unsupported work type")
         return work_package
 
     async def work_order_token(
         self,
+        *,
         work_package_id: str,
         file_id: str,
         check_valid: bool = True,
@@ -250,3 +252,26 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             return await self._dataset_dao.get_by_id(dataset_id)
         except ResourceNotFoundError as error:
             raise self.DatasetNotFoundError("Dataset not found") from error
+
+    async def get_datasets(
+        self, *, auth_context: AuthContext, work_type: Optional[WorkType] = None
+    ) -> list[Dataset]:
+        """Get the list of all datasets accessible to the authenticated user.
+
+        A work type can be specified for filtering the datasets, but currently
+        only downloadable datasets are supported.
+        """
+        user_id = auth_context.id
+        if user_id is None:
+            raise self.WorkPackageAccessError("No internal user specified")
+        if work_type is not None and work_type != WorkType.DOWNLOAD:
+            raise self.WorkPackageAccessError("Unsupported work type")
+        dataset_ids = await self._access.get_datasets_with_download_access(user_id)
+        datasets: list[Dataset] = []
+        for dataset_id in dataset_ids:
+            try:
+                dataset = await self.get_dataset(dataset_id)
+            except self.DatasetNotFoundError:
+                continue
+            datasets.append(dataset)
+        return datasets
