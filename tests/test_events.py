@@ -24,12 +24,14 @@ from hexkit.providers.mongodb.testutils import (  # noqa: F401 # pylint: disable
 )
 from pytest import mark, raises
 
+from wps.container import Container
+
 from .fixtures import fixture_container  # noqa: F401 # pylint: disable=unused-import
 from .fixtures.datasets import DATASET
 
 
 @mark.asyncio
-async def test_dataset_registration(container):
+async def test_dataset_registration(container: Container):
     """Test the registration of a dataset announced as an event."""
 
     repository = await container.work_package_repository()

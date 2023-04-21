@@ -24,7 +24,9 @@ from hexkit.providers.akafka.testutils import (  # noqa: F401 # pylint: disable=
 from hexkit.providers.mongodb.testutils import (  # noqa: F401 # pylint: disable=unused-import
     mongodb_fixture,
 )
+from httpx import AsyncClient
 from pytest import mark
+from pytest_httpx import HTTPXMock
 
 from .fixtures import (  # noqa: F401 # pylint: disable=unused-import
     SIGNING_KEY_PAIR,
@@ -46,7 +48,7 @@ CREATION_DATA = {
 
 
 @mark.asyncio
-async def test_health_check(client):
+async def test_health_check(client: AsyncClient):
     """Test that the health check endpoint works."""
 
     response = await client.get("/health")
@@ -56,7 +58,9 @@ async def test_health_check(client):
 
 
 @mark.asyncio
-async def test_create_work_package_unauthorized(client, bad_auth_headers):
+async def test_create_work_package_unauthorized(
+    client: AsyncClient, bad_auth_headers: dict[str, str]
+):
     """Test that creating a work package needs authorization."""
 
     response = await client.post("/work-packages", json=CREATION_DATA)
@@ -68,7 +72,7 @@ async def test_create_work_package_unauthorized(client, bad_auth_headers):
 
 
 @mark.asyncio
-async def test_get_work_package_unauthorized(client):
+async def test_get_work_package_unauthorized(client: AsyncClient):
     """Test that getting a work package needs authorization."""
 
     response = await client.get("/work-packages/some-work-package-id")
@@ -76,7 +80,9 @@ async def test_get_work_package_unauthorized(client):
 
 
 @mark.asyncio
-async def test_create_work_order_token(client, auth_headers, httpx_mock):
+async def test_create_work_order_token(
+    client: AsyncClient, auth_headers, httpx_mock: HTTPXMock
+):
     """Test that work order tokens can be properly created."""
 
     # mock the access check for the test dataset
