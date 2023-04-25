@@ -46,7 +46,6 @@ class DatasetFile(BaseDto):
     """A file as that is part of a dataset."""
 
     id: str = Field(..., description="The file ID.")
-    description: Optional[str] = Field(..., description="The description of the file.")
     extension: str = Field(..., description="The file extension with a leading dot.")
 
 
