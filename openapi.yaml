@@ -33,10 +33,6 @@ components:
       additionalProperties: false
       description: A file as that is part of a dataset.
       properties:
-        description:
-          description: The description of the file.
-          title: Description
-          type: string
         extension:
           description: The file extension with a leading dot.
           title: Extension
@@ -47,7 +43,6 @@ components:
           type: string
       required:
       - id
-      - description
       - extension
       title: DatasetFile
       type: object

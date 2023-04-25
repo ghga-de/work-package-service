@@ -61,7 +61,6 @@ def test_sign_work_order_token():
     work_order_token = WorkOrderToken(
         type=WorkType.DOWNLOAD,
         file_id="some-file-id",
-        file_ext=".some-ext",
         user_id="some-user-id",
         user_public_crypt4gh_key="some-public-key",
         full_user_name="Dr. John Doe",

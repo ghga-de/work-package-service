@@ -141,7 +141,6 @@ async def test_work_package_and_token_creation(
     assert wot_claims == {
         "type": package.type.value,
         "file_id": "file-id-3",
-        "file_ext": ".bam",
         "user_id": package.user_id,
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": package.full_user_name,
@@ -197,7 +196,6 @@ async def test_work_package_and_token_creation(
     assert wot_claims == {
         "type": package.type.value,
         "file_id": "file-id-1",
-        "file_ext": ".json",
         "user_id": package.user_id,
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": package.full_user_name,

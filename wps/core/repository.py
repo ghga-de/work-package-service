@@ -227,7 +227,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         wot = WorkOrderToken(
             type=work_package.type,
             file_id=file_id,
-            file_ext=work_package.files[file_id],
             user_id=work_package.user_id,
             user_public_crypt4gh_key=user_public_crypt4gh_key,
             full_user_name=work_package.full_user_name,

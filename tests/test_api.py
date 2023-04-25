@@ -215,7 +215,6 @@ async def test_create_work_order_token(
     assert token_dict == {
         "type": "download",
         "file_id": "file-id-3",
-        "file_ext": ".bam",
         "user_id": "john-doe@ghga.de",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": "Dr. John Doe",
