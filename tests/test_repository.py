@@ -143,7 +143,7 @@ async def test_work_package_and_token_creation(
         "file_id": "file-id-3",
         "file_ext": ".bam",
         "user_id": package.user_id,
-        "public_key": user_public_crypt4gh_key,
+        "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": package.full_user_name,
         "email": package.email,
     }
@@ -199,7 +199,7 @@ async def test_work_package_and_token_creation(
         "file_id": "file-id-1",
         "file_ext": ".json",
         "user_id": package.user_id,
-        "public_key": user_public_crypt4gh_key,
+        "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": package.full_user_name,
         "email": package.email,
     }

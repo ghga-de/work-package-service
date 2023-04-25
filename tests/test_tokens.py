@@ -63,7 +63,7 @@ def test_sign_work_order_token():
         file_id="some-file-id",
         file_ext=".some-ext",
         user_id="some-user-id",
-        public_key="some-public-key",
+        user_public_crypt4gh_key="some-public-key",
         full_user_name="Dr. John Doe",
         email="john@home.org",
     )

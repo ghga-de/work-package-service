@@ -223,18 +223,18 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         )
         if file_id not in work_package.files:
             raise self.WorkPackageAccessError("File is not contained in work package")
-        public_key = work_package.user_public_crypt4gh_key
+        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
         wot = WorkOrderToken(
             type=work_package.type,
             file_id=file_id,
             file_ext=work_package.files[file_id],
             user_id=work_package.user_id,
-            public_key=public_key,
+            user_public_crypt4gh_key=user_public_crypt4gh_key,
             full_user_name=work_package.full_user_name,
             email=work_package.email,
         )
         signed_wot = sign_work_order_token(wot, self._signing_key)
-        return encrypt(signed_wot, public_key)
+        return encrypt(signed_wot, user_public_crypt4gh_key)
 
     async def register_dataset(self, dataset: Dataset) -> None:
         """Register a dataset with all of its files."""

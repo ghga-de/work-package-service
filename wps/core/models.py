@@ -74,7 +74,7 @@ class WorkOrderToken(BaseDto):
     file_id: str
     file_ext: str
     user_id: str
-    public_key: str
+    user_public_crypt4gh_key: str
     full_user_name: str
     email: EmailStr
 

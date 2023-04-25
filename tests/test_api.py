@@ -217,7 +217,7 @@ async def test_create_work_order_token(
         "file_id": "file-id-3",
         "file_ext": ".bam",
         "user_id": "john-doe@ghga.de",
-        "public_key": user_public_crypt4gh_key,
+        "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": "Dr. John Doe",
         "email": "john@home.org",
     }
