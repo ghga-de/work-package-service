@@ -179,12 +179,12 @@ async def create_work_order_token(
 
 
 @router.get(
-    "/datasets",
+    "/users/{user_id}/datasets",
     operation_id="get_datasets",
     tags=["Datasets"],
-    summary="Get all datasets of the authenticated user",
+    summary="Get all datasets of the given user",
     description="Endpoint used to get details for all datasets"
-    " that are accessible to the authenticated user",
+    " that are accessible to the given user",
     responses={
         200: {
             "model": list[Dataset],
@@ -197,6 +197,10 @@ async def create_work_order_token(
 )
 @inject
 async def get_datasets(
+    user_id: str = Path(
+        ...,
+        alias="user_id",
+    ),
     repository: WorkPackageRepositoryPort = Depends(
         Provide[Container.work_package_repository]
     ),
@@ -204,6 +208,8 @@ async def get_datasets(
 ) -> list[Dataset]:
     """Get datasets using an internal auth token with a user context."""
     try:
+        if user_id != auth_context.id:
+            raise repository.WorkPackageAccessError("Not authorized to get datasets")
         datasets = await repository.get_datasets(auth_context=auth_context)
     except repository.WorkPackageAccessError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error

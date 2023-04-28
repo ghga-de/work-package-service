@@ -224,9 +224,22 @@ async def test_create_work_order_token(
 
 @mark.asyncio
 async def test_get_datasets_unauthenticated(client: AsyncClient):
-    """Test that the list of accessible datasets can be fetched unauthenticated."""
+    """Test that the list of accessible datasets cannot be fetched unauthenticated."""
 
-    response = await client.get("/datasets")
+    response = await client.get("/users/john-doe@ghga.de/datasets")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@mark.asyncio
+async def test_get_datasets_for_another_user(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+):
+    """Test that the list of accessible datasets for another user cannot be fetched."""
+
+    response = await client.get(
+        "/users/john-foo@ghga.de/datasets", headers=auth_headers
+    )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -246,7 +259,9 @@ async def test_get_datasets_when_none_authorized(
 
     # get the list of datasets
 
-    response = await client.get("/datasets", headers=auth_headers)
+    response = await client.get(
+        "/users/john-doe@ghga.de/datasets", headers=auth_headers
+    )
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
@@ -270,7 +285,9 @@ async def test_get_datasets(
 
     # get the list of datasets
 
-    response = await client.get("/datasets", headers=auth_headers)
+    response = await client.get(
+        "/users/john-doe@ghga.de/datasets", headers=auth_headers
+    )
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
