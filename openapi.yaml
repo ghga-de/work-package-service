@@ -136,11 +136,31 @@ info:
   version: 0.1.0
 openapi: 3.0.2
 paths:
-  /datasets:
+  /health:
+    get:
+      description: Used to test if this service is alive
+      operationId: health_health_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: health
+      tags:
+      - WorkPackages
+  /users/{user_id}/datasets:
     get:
       description: Endpoint used to get details for all datasets that are accessible
-        to the authenticated user
+        to the given user
       operationId: get_datasets
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
       responses:
         '200':
           content:
@@ -157,22 +177,9 @@ paths:
           description: Validation error in submitted user data.
       security:
       - HTTPBearer: []
-      summary: Get all datasets of the authenticated user
+      summary: Get all datasets of the given user
       tags:
       - Datasets
-  /health:
-    get:
-      description: Used to test if this service is alive
-      operationId: health_health_get
-      responses:
-        '200':
-          content:
-            application/json:
-              schema: {}
-          description: Successful Response
-      summary: health
-      tags:
-      - WorkPackages
   /work-packages:
     post:
       description: Endpoint used to create a new work package
