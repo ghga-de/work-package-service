@@ -257,8 +257,10 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     ) -> list[Dataset]:
         """Get the list of all datasets accessible to the authenticated user.
 
-        A work type can be specified for filtering the datasets, but currently
-        only downloadable datasets are supported.
+        A work type can be specified for filtering the datasets. If no work type is
+        specified, the datasets for all work types (upload and download) are returned.
+
+        Note that currently only downloadable datasets are supported.
         """
         user_id = auth_context.id
         if user_id is None:
