@@ -18,8 +18,8 @@
 from fastapi import FastAPI
 from ghga_service_commons.api import configure_app, run_server
 
-from wps.adapters.inbound.http.openapi import get_openapi_schema
-from wps.adapters.inbound.http.routes import router
+from wps.adapters.inbound.fastapi_.openapi import get_openapi_schema
+from wps.adapters.inbound.fastapi_.routes import router
 from wps.config import Config
 from wps.container import Container
 
@@ -31,9 +31,9 @@ def get_container(*, config: Config) -> Container:
     container.config.load_config(config)
     container.wire(
         modules=[
-            "wps.adapters.inbound.http.auth",
-            "wps.adapters.inbound.http.openapi",
-            "wps.adapters.inbound.http.routes",
+            "wps.adapters.inbound.fastapi_.auth",
+            "wps.adapters.inbound.fastapi_.openapi",
+            "wps.adapters.inbound.fastapi_.routes",
         ]
     )
     return container
