@@ -41,4 +41,5 @@ USER appuser
 # set environment
 ENV PYTHONUNBUFFERED=1
 
-ENTRYPOINT ["work-package-service"]
+ENTRYPOINT ["wps"]
+CMD ["run-rest"]
