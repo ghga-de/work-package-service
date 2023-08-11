@@ -60,6 +60,7 @@ async def test_dataset_insert_update_delete(
     accession = "another-dataset-id"
     with raises(repository.DatasetNotFoundError):
         await repository.get_dataset(accession)
+    key = "test-key-crud"
 
     # insert a dataset
 
@@ -69,7 +70,7 @@ async def test_dataset_insert_update_delete(
         payload=inserted_dataset.dict(),
         topic=config.dataset_change_event_topic,
         type_=config.dataset_upsertion_event_type,
-        key="test-key-1",
+        key=key,
     )
     await asyncio.wait_for(event_subscriber.run(forever=False), timeout=TIMEOUT)
 
@@ -97,7 +98,7 @@ async def test_dataset_insert_update_delete(
         payload=updated_dataset.dict(),
         topic=config.dataset_change_event_topic,
         type_=config.dataset_upsertion_event_type,
-        key="test-key-2",
+        key=key,
     )
     await asyncio.wait_for(event_subscriber.run(forever=False), timeout=TIMEOUT)
     # wait until dataset is updated
@@ -118,7 +119,7 @@ async def test_dataset_insert_update_delete(
         payload=deleted_dataset.dict(),
         topic=config.dataset_change_event_topic,
         type_=config.dataset_deletion_event_type,
-        key="test_key-3",
+        key=key,
     )
     await asyncio.wait_for(event_subscriber.run(forever=False), timeout=TIMEOUT)
 
