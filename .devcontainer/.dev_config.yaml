@@ -16,8 +16,9 @@ kafka_servers: ["kafka:9092"]
 
 download_access_url: "http://127.0.0.1:8080/download-access"
 
-dataset_overview_event_topic: metadata
-dataset_overview_event_type: metadata_dataset_overview
+dataset_change_event_topic: metadata_datasets
+dataset_upsertion_event_type: dataset_created
+dataset_deletion_event_type: dataset_deleted
 
 # the default keys are invalid but set for creating the example specs
 auth_key: "{}"
