@@ -84,7 +84,7 @@ async def test_dataset_insert_update_delete(
             assert dataset.title == "Test dataset 1"
             break
     else:
-        assert False, "dataset not created"  # noqa: B011
+        assert False, "dataset not created"
 
     # update the dataset
 
@@ -107,7 +107,7 @@ async def test_dataset_insert_update_delete(
         if dataset.title == "Changed dataset 1":
             break
     else:
-        assert False, "dataset title not changed"  # noqa: B011
+        assert False, "dataset title not changed"
 
     # delete the dataset again
 
@@ -129,4 +129,4 @@ async def test_dataset_insert_update_delete(
         except repository.DatasetNotFoundError:
             break
     else:
-        assert False, "dataset not deleted"  # noqa: B011
+        assert False, "dataset not deleted"
