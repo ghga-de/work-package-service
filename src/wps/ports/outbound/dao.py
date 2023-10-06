@@ -12,29 +12,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-"""Entrypoint of the package"""
+"""DAO interface for accessing the database."""
 
-import asyncio
+from hexkit.protocols.dao import DaoNaturalId, DaoSurrogateId, ResourceNotFoundError
 
-import typer
-from ghga_service_commons.utils.utc_dates import assert_tz_is_utc
+from wps.core import models
 
-from wps.main import consume_events, run_rest
+__all__ = ["DatasetDaoPort", "WorkPackageDaoPort", "ResourceNotFoundError"]
 
-cli = typer.Typer()
-
-
-@cli.command(name="run-rest")
-def sync_run_api():
-    """Run the HTTP REST API."""
-
-    assert_tz_is_utc()
-    asyncio.run(run_rest())
-
-
-@cli.command(name="consume-events")
-def sync_consume_events(run_forever: bool = True):
-    """Run an event consumer listening to the configured topic."""
-
-    asyncio.run(consume_events(run_forever=run_forever))
+# ports described by type aliases:
+DatasetDaoPort = DaoNaturalId[models.Dataset]
+WorkPackageDaoPort = DaoSurrogateId[models.WorkPackage, models.WorkPackageData]

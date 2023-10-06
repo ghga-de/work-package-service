@@ -14,28 +14,23 @@
 # limitations under the License.
 #
 
-"""Utils to customize the OpenAPI script"""
+"""Outbound access checks"""
 
-from typing import Any, Dict
+from abc import ABC, abstractmethod
 
-from fastapi.openapi.utils import get_openapi
-
-from wps import __version__
-from wps.config import Config
-
-__all__ = ["get_openapi_schema"]
+__all__ = ["AccessCheckPort"]
 
 
-def get_openapi_schema(api) -> Dict[str, Any]:
-    """Generate a custom OpenAPI schema for the service."""
+class AccessCheckPort(ABC):
+    """A port for checking access permissions for datasets."""
 
-    config = Config()  # pyright: ignore
+    class AccessCheckError(RuntimeError):
+        """Raised when the access check failed without result."""
 
-    return get_openapi(
-        title="Work Package Service",
-        version=__version__,
-        description="A service managing work packages for the GHGA CLI",
-        servers=[{"url": config.api_root_path}],
-        tags=[{"name": "WorkPackages"}, {"name": "Datasets"}],
-        routes=api.routes,
-    )
+    @abstractmethod
+    async def check_download_access(self, user_id: str, dataset_id: str) -> bool:
+        """Check whether the given user has download access for the given dataset."""
+
+    @abstractmethod
+    async def get_datasets_with_download_access(self, user_id: str) -> list[str]:
+        """Get all datasets that the given user is allowed to download."""

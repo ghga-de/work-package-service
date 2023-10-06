@@ -12,7 +12,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-"""Work Package Service"""
+"""Utils to customize the OpenAPI script"""
 
-__version__ = "0.1.4"
+from typing import Any
+
+from fastapi.openapi.utils import get_openapi
+
+from wps import __version__
+from wps.config import Config
+
+__all__ = ["get_openapi_schema"]
+
+
+def get_openapi_schema(api) -> dict[str, Any]:
+    """Generate a custom OpenAPI schema for the service."""
+    config = Config()  # pyright: ignore
+
+    return get_openapi(
+        title="Work Package Service",
+        version=__version__,
+        description="A service managing work packages for the GHGA CLI",
+        servers=[{"url": config.api_root_path}],
+        tags=[{"name": "WorkPackages"}, {"name": "Datasets"}],
+        routes=api.routes,
+    )

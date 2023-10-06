@@ -17,7 +17,6 @@
 """Used to define the location of the main FastAPI app object."""
 
 # flake8: noqa
-# pylint: skip-file
 
 from typing import Any, Dict
 

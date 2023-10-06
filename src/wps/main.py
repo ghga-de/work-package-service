@@ -26,7 +26,6 @@ from wps.container import Container
 
 def get_container(*, config: Config) -> Container:
     """Create, configure and wire the DI container."""
-
     container = Container()
     container.config.load_config(config)
     container.wire(
@@ -45,7 +44,6 @@ def get_rest_api(*, config: Config) -> FastAPI:
     For full functionality of the AP, run in the context of a CI container with
     correct wiring and initialized resources (see the run_rest function below).
     """
-
     api = FastAPI()
     api.include_router(router)
     configure_app(api, config=config)
@@ -64,7 +62,6 @@ def get_rest_api(*, config: Config) -> FastAPI:
 
 async def run_rest():
     """Run the HTTP REST API."""
-
     config = Config()  # pyright: ignore
 
     async with get_container(config=config):
@@ -74,7 +71,6 @@ async def run_rest():
 
 async def consume_events(run_forever: bool = True):
     """Run an event consumer listening to the configured topic."""
-
     config = Config()  # pyright: ignore
 
     async with get_container(config=config) as container:
