@@ -99,7 +99,7 @@ def fixture_auth_context() -> AuthContext:
 async def fixture_repository(mongodb_fixture: MongoDbFixture) -> WorkPackageRepository:
     """Fixture for creating a configured repository"""
     work_package_config = WorkPackageConfig(
-        work_package_signing_key=SIGNING_KEY_PAIR.export_private()  # pyright: ignore
+        work_package_signing_key=SIGNING_KEY_PAIR.export_private()  # type: ignore
     )
     dataset_dao = await DatasetDaoConstructor.construct(
         config=work_package_config,
