@@ -19,19 +19,22 @@
 from typing import Any
 
 from fastapi import FastAPI
+from ghga_service_commons.api import ApiConfigBase
 
-from wps.adapters.inbound.fastapi_.openapi import get_openapi_schema
+from wps.adapters.inbound.fastapi_.configure import get_openapi_schema
 from wps.adapters.inbound.fastapi_.routes import router
 
 app = FastAPI()
 app.include_router(router)
+
+CONFIG = ApiConfigBase()  # pyright: ignore
 
 
 def custom_openapi() -> dict[str, Any]:
     """Get custom OpenAPI schema."""
     if app.openapi_schema:
         return app.openapi_schema
-    openapi_schema = get_openapi_schema(app)
+    openapi_schema = get_openapi_schema(app, config=CONFIG)
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
