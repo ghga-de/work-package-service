@@ -19,9 +19,7 @@
 import pytest
 from hexkit.providers.akafka.testutils import get_kafka_fixture
 from hexkit.providers.mongodb.testutils import MongoDbFixture, get_mongodb_fixture
-from hexkit.providers.testing.utils import get_event_loop
 
-event_loop = get_event_loop("session")
 kafka_fixture = get_kafka_fixture("session")
 mongodb_fixture = get_mongodb_fixture("session")
 
