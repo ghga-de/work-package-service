@@ -16,6 +16,7 @@
 
 """Shared fixtures"""
 import asyncio
+from time import sleep
 
 import pytest
 from hexkit.providers.akafka.testutils import KafkaFixture, get_kafka_fixture
@@ -54,4 +55,4 @@ def populate_db(reset_db, consumer, config, kafka_fixture: KafkaFixture):
     loop.run_until_complete(
         asyncio.wait_for(consumer.event_subscriber.run(forever=False), timeout=10)
     )
-    loop.run_until_complete(asyncio.sleep(0.25))
+    sleep(0.25)
