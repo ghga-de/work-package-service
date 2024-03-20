@@ -30,13 +30,13 @@ services:
       WPS_CONFIG_YAML: /workspace/.devcontainer/.dev_config.yaml
 
   mongodb:
-    image: mongo:6.0.3
+    image: mongo:7.0.7
     restart: unless-stopped
     volumes:
       - mongo_fs:/data/db
 
   mongo-express:
-    image: mongo-express
+    image: mongo-express:1.0.2
     restart: unless-stopped
     ports:
       - 8088:8081
