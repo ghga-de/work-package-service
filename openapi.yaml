@@ -277,7 +277,7 @@ paths:
       tags:
       - WorkPackages
 servers:
-- url: /
+- url: ''
 tags:
 - name: WorkPackages
 - name: Datasets
