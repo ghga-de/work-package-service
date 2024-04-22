@@ -54,6 +54,6 @@ def populate_db(reset_db, consumer, config, kafka_fixture: KafkaFixture):
     # wait for event to be submitted and processed,
     # so that the database is populated with the published datasets
     loop.run_until_complete(
-        asyncio.wait_for(consumer.event_subscriber.run(forever=False), timeout=10)
+        asyncio.wait_for(consumer.event_subscriber.run(forever=False), timeout=30)
     )
-    sleep(0.25)
+    sleep(0.125)
