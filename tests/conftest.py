@@ -16,50 +16,33 @@
 
 """Shared fixtures"""
 
-import asyncio
-
 import pytest
-from hexkit.providers.akafka.testutils import KafkaFixture, get_kafka_fixture
+from hexkit.providers.akafka.testutils import get_kafka_fixture
 from hexkit.providers.mongodb.testutils import MongoDbFixture, get_mongodb_fixture
 
-from tests.fixtures.datasets import DATASET_UPSERTION_EVENT
 from wps.config import Config
-from wps.inject import Consumer
+
+from .fixtures.datasets import DATASET
 
 kafka_fixture = get_kafka_fixture("session")
 mongodb_fixture = get_mongodb_fixture("session")
 
 
-@pytest.fixture(autouse=True, scope="function")
-def reset_db(mongodb_fixture: MongoDbFixture):
-    """Clear the database before tests."""
+@pytest.fixture(name="empty_mongodb")
+def empty_mongodb_fixture(mongodb_fixture: MongoDbFixture) -> MongoDbFixture:
+    """MongoDB Fixture with empty database."""
     mongodb_fixture.empty_collections()
+    return mongodb_fixture
 
 
-async def publish_and_process_dataset_upsertion_event(
-    config: Config, kafka_fixture: KafkaFixture, consumer: Consumer
-):
-    """Publish and process a dataset upsertion event"""
-    await kafka_fixture.publish_event(
-        payload=DATASET_UPSERTION_EVENT.model_dump(),
-        topic=config.dataset_change_event_topic,
-        type_=config.dataset_upsertion_event_type,
-        key="test-key-fixture",
-    )
-    await asyncio.wait_for(consumer.event_subscriber.run(forever=False), timeout=10)
-    await asyncio.sleep(0.125)
-
-
-@pytest.fixture(scope="function")
-def populate_db(
-    reset_db, config: Config, kafka_fixture: KafkaFixture, consumer: Consumer
-):
-    """Populate the database
-
-    Required for tests using the consumer or client fixtures.
-    """
-    asyncio.get_event_loop().run_until_complete(
-        publish_and_process_dataset_upsertion_event(
-            config=config, kafka_fixture=kafka_fixture, consumer=consumer
-        )
-    )
+@pytest.fixture(name="populated_mongodb")
+def populated_mongodb_fixture(
+    empty_mongodb: MongoDbFixture, config: Config
+) -> MongoDbFixture:
+    """MongoDB Fixture with a database populated with one dataset."""
+    database = empty_mongodb.client.get_database(config.db_name)
+    collection = database.get_collection(config.datasets_collection)
+    dataset = DATASET.model_dump()
+    dataset["_id"] = dataset.pop("id")
+    collection.insert_one(dataset)
+    return empty_mongodb
