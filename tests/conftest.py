@@ -17,13 +17,14 @@
 """Shared fixtures"""
 
 import asyncio
-from time import sleep
 
 import pytest
 from hexkit.providers.akafka.testutils import KafkaFixture, get_kafka_fixture
 from hexkit.providers.mongodb.testutils import MongoDbFixture, get_mongodb_fixture
 
 from tests.fixtures.datasets import DATASET_UPSERTION_EVENT
+from wps.config import Config
+from wps.inject import Consumer
 
 kafka_fixture = get_kafka_fixture("session")
 mongodb_fixture = get_mongodb_fixture("session")
@@ -35,25 +36,30 @@ def reset_db(mongodb_fixture: MongoDbFixture):
     mongodb_fixture.empty_collections()
 
 
+async def publish_and_process_dataset_upsertion_event(
+    config: Config, kafka_fixture: KafkaFixture, consumer: Consumer
+):
+    """Publish and process a dataset upsertion event"""
+    await kafka_fixture.publish_event(
+        payload=DATASET_UPSERTION_EVENT.model_dump(),
+        topic=config.dataset_change_event_topic,
+        type_=config.dataset_upsertion_event_type,
+        key="test-key-fixture",
+    )
+    await asyncio.wait_for(consumer.event_subscriber.run(forever=False), timeout=10)
+    await asyncio.sleep(0.125)
+
+
 @pytest.fixture(scope="function")
-def populate_db(reset_db, consumer, config, kafka_fixture: KafkaFixture):
+def populate_db(
+    reset_db, config: Config, kafka_fixture: KafkaFixture, consumer: Consumer
+):
     """Populate the database
 
     Required for tests using the consumer or client fixtures.
     """
-    loop = asyncio.get_event_loop()
-    # publish an event announcing a dataset
-    loop.run_until_complete(
-        kafka_fixture.publish_event(
-            payload=DATASET_UPSERTION_EVENT.model_dump(),
-            topic=config.dataset_change_event_topic,
-            type_=config.dataset_upsertion_event_type,
-            key="test-key-fixture",
+    asyncio.get_event_loop().run_until_complete(
+        publish_and_process_dataset_upsertion_event(
+            config=config, kafka_fixture=kafka_fixture, consumer=consumer
         )
     )
-    # wait for event to be submitted and processed,
-    # so that the database is populated with the published datasets
-    loop.run_until_complete(
-        asyncio.wait_for(consumer.event_subscriber.run(forever=False), timeout=30)
-    )
-    sleep(0.125)
