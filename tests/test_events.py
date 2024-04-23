@@ -138,7 +138,7 @@ async def test_dataset_deletion(
         payload=deleted_dataset.model_dump(),
         topic=config.dataset_change_event_topic,
         type_=config.dataset_deletion_event_type,
-        key="test_key",
+        key="test-key",
     )
     await asyncio.wait_for(subscriber.run(forever=False), timeout=TIMEOUT)
 
