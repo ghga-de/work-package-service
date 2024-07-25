@@ -127,7 +127,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         if work_type == WorkType.DOWNLOAD:
             if not await self._access.check_download_access(user_id, dataset_id):
                 access_error = self.WorkPackageAccessError(
-                    "Dataset access permission has not been granted"
+                    "Missing dataset access permission"
                 )
                 log.error(access_error, extra=extra)
                 raise access_error
