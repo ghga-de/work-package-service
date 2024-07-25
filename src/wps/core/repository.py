@@ -278,22 +278,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(access_error, extra=extra)
             raise access_error
 
-        if work_package.type == WorkType.DOWNLOAD:
-            # since the work package access token is long-lived,
-            # we double-check that the user still has access
-            if not await self._access.check_download_access(
-                work_package.user_id, work_package.dataset_id
-            ):
-                access_error = self.WorkPackageAccessError(
-                    "Dataset access permission has been revoked"
-                )
-                log.error(access_error, extra=extra)
-                raise access_error
-        else:
-            access_error = self.WorkPackageAccessError("Unsupported work type")
-            log.error(access_error, extra=extra)
-            raise access_error
-
         user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
         wot = WorkOrderToken(
             type=work_package.type,
