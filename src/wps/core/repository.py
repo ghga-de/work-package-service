@@ -127,7 +127,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         if work_type == WorkType.DOWNLOAD:
             if not await self._access.check_download_access(user_id, dataset_id):
                 access_error = self.WorkPackageAccessError(
-                    "Missing dataset access permission"
+                    "Dataset access permission has not been granted"
                 )
                 log.error(access_error, extra=extra)
                 raise access_error
@@ -257,6 +257,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         - if check_valid is set and the work package has expired
         - if a work_package_access_token is specified and it does not match
           the token hash that is stored in the work package
+        - if the access permission has been revoked
         """
         extra = {  # only used for logging
             "work_package_id": work_package_id,
@@ -274,6 +275,22 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             access_error = self.WorkPackageAccessError(
                 "File is not contained in work package"
             )
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        if work_package.type == WorkType.DOWNLOAD:
+            # since the work package access token is long-lived,
+            # we double-check that the user still has access
+            if not await self._access.check_download_access(
+                work_package.user_id, work_package.dataset_id
+            ):
+                access_error = self.WorkPackageAccessError(
+                    "Dataset access permission has been revoked"
+                )
+                log.error(access_error, extra=extra)
+                raise access_error
+        else:
+            access_error = self.WorkPackageAccessError("Unsupported work type")
             log.error(access_error, extra=extra)
             raise access_error
 
