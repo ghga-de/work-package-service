@@ -203,7 +203,9 @@ async def test_work_package_and_token_creation(
 
     # revoke access and check that work order token cannot be created any more
     async def check_download_access_patched(user_id: str, dataset_id: str) -> bool:
-        return (user_id, dataset_id) != (package.user_id, package.dataset_id)
+        assert user_id == package.user_id
+        assert dataset_id == package.dataset_id
+        return False
 
     access = repository._access
     _check_download_access_original = access.check_download_access
