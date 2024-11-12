@@ -76,7 +76,7 @@ async def test_get_work_package_unauthorized(client: AsyncTestClient):
 
 
 @pytest.mark.httpx_mock(
-    assert_all_responses_were_requested=False, can_send_already_matched_responses=True
+    can_send_already_matched_responses=True
 )
 async def test_create_work_order_token(
     client: AsyncTestClient,
