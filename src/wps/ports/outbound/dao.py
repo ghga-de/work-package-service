@@ -20,7 +20,7 @@ from hexkit.protocols.dao import DaoNaturalId, DaoSurrogateId, ResourceNotFoundE
 
 from wps.core import models
 
-__all__ = ["DatasetDaoPort", "WorkPackageDaoPort", "ResourceNotFoundError"]
+__all__ = ["DatasetDaoPort", "ResourceNotFoundError", "WorkPackageDaoPort"]
 
 # ports described by type aliases:
 DatasetDaoPort = DaoNaturalId[models.Dataset]
