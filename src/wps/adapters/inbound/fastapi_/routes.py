@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 
 from wps.adapters.inbound.fastapi_.auth import UserAuthContext, WorkPackageAccessToken
 from wps.adapters.inbound.fastapi_.dummies import WorkPackageRepositoryDummy
+from wps.constants import WORK_ORDER_TOKEN_VALID_SECONDS
 from wps.core.models import (
     Dataset,
     WorkPackageCreationData,
@@ -151,7 +152,9 @@ async def create_work_order_token(
             work_package_access_token=work_package_access_token,
         )
 
-        cache_control_header = {"Cache-Control": "max-age=30"}
+        cache_control_header = {
+            "Cache-Control": f"max-age={WORK_ORDER_TOKEN_VALID_SECONDS}, must-revalidate"
+        }
         return JSONResponse(content=wot, status_code=201, headers=cache_control_header)
     except repository.WorkPackageAccessError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error

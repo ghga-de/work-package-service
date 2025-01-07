@@ -23,7 +23,7 @@ from ghga_service_commons.utils.jwt_helpers import decode_and_validate_token
 from hexkit.providers.mongodb.testutils import MongoDbFixture
 from pytest_httpx import HTTPXMock
 
-from wps.core.tokens import WORK_ORDER_TOKEN_VALID_SECONDS
+from wps.constants import WORK_ORDER_TOKEN_VALID_SECONDS
 
 from .fixtures import (  # noqa: F401
     SIGNING_KEY_PAIR,
@@ -189,9 +189,9 @@ async def test_create_work_order_token(
     )
     assert response.status_code == status.HTTP_201_CREATED
     assert "Cache-Control" in response.headers
-    assert (
-        response.headers["Cache-Control"] == f"max-age={WORK_ORDER_TOKEN_VALID_SECONDS}"
-    )
+    cache_headers = response.headers["Cache-Control"].split(", ")
+    assert f"max-age={WORK_ORDER_TOKEN_VALID_SECONDS}" in cache_headers
+    assert "must-revalidate" in cache_headers
 
     wot = response.json()
     assert isinstance(wot, str)
