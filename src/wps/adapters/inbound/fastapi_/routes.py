@@ -153,7 +153,7 @@ async def create_work_order_token(
         )
 
         cache_control_header = {
-            "Cache-Control": f"max-age={WORK_ORDER_TOKEN_VALID_SECONDS}"
+            "Cache-Control": f"max-age={WORK_ORDER_TOKEN_VALID_SECONDS}, private"
         }
         return JSONResponse(content=wot, status_code=201, headers=cache_control_header)
     except repository.WorkPackageAccessError as error:

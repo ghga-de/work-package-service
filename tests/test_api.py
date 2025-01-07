@@ -190,7 +190,7 @@ async def test_create_work_order_token(
     assert response.status_code == status.HTTP_201_CREATED
     assert "Cache-Control" in response.headers
     cache_control = response.headers["Cache-Control"]
-    assert cache_control == f"max-age={WORK_ORDER_TOKEN_VALID_SECONDS}"
+    assert cache_control == f"max-age={WORK_ORDER_TOKEN_VALID_SECONDS}, private"
 
     wot = response.json()
     assert isinstance(wot, str)
