@@ -46,5 +46,5 @@ WORKDIR /home/appuser
 USER appuser
 ENV PYTHONUNBUFFERED=1
 
-ENTRYPOINT ["wps"]
+ENTRYPOINT ["opentelemetry-instrument", "wps"]
 CMD ["run-rest"]
