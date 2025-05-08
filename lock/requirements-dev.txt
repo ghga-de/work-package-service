@@ -460,9 +460,9 @@ h11==0.16.0 \
     # via
     #   httpcore
     #   uvicorn
-hexkit==4.6.1 \
-    --hash=sha256:1efcf0f8949718766b419bf565409ce7fd869671d76ce6d9726c087bfb635802 \
-    --hash=sha256:71df7a95a297297656d695698081465b2dfdb18b39cfd5e11d015742c924099c
+hexkit==4.6.2 \
+    --hash=sha256:422aba57877ec6657de299049d2099c5bb7813cd1a9a0b204dc1b3d8f5a4080e \
+    --hash=sha256:cc6fcc7037914ff896d261caef1126f7ab854c23f4161c71d1dc3edefc81e49c
     # via
     #   wps (pyproject.toml)
     #   ghga-service-commons
@@ -635,11 +635,9 @@ opentelemetry-api==1.32.1 \
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiokafka
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-pymongo
-    #   opentelemetry-propagator-aws-xray
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
 opentelemetry-distro==0.53b1 \
@@ -662,7 +660,6 @@ opentelemetry-instrumentation==0.53b1 \
     #   opentelemetry-distro
     #   opentelemetry-instrumentation-aiokafka
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-pymongo
@@ -674,10 +671,6 @@ opentelemetry-instrumentation-asgi==0.53b1 \
     --hash=sha256:5f8422eff0a9e3ecb052a8726335925610bb9bd7bb1acf1619c2c28dc3c04842 \
     --hash=sha256:74b7a023787c574f2dd5ed9376e5b921c14501ba1b281ec8527eaadc442563e7
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-botocore==0.53b1 \
-    --hash=sha256:10e6e34103c4fafbc0bf1cf7ac9f4c5229a072f87e6788782fe0446281be3371 \
-    --hash=sha256:e0e323e39f3e0c9181a3ab258bcac4e4a28c6518e6ffdde57d533f98c7f65103
-    # via hexkit
 opentelemetry-instrumentation-fastapi==0.53b1 \
     --hash=sha256:24e98ddd1bd8164069e68e36c47bb729fefb0a851e6dd520f4fc81c3bbc54147 \
     --hash=sha256:f8ed5b65e9086b86caeae191fcf798ec7b47469ac7f0341461acc03886278741
@@ -690,10 +683,6 @@ opentelemetry-instrumentation-pymongo==0.53b1 \
     --hash=sha256:2184cc6ded4266af141cfae7ff9d0b074e8f94ad5204ad2acef5ceddc6391132 \
     --hash=sha256:525088063ff790c12b89c6a97617841d43e51975604d957ca818122fb47760bf
     # via hexkit
-opentelemetry-propagator-aws-xray==1.0.2 \
-    --hash=sha256:1c99181ee228e99bddb638a0c911a297fa21f1c3a0af951f841e79919b5f1934 \
-    --hash=sha256:6b2cee5479d2ef0172307b66ed2ed151f598a0fd29b3c01133ac87ca06326260
-    # via opentelemetry-instrumentation-botocore
 opentelemetry-proto==1.32.1 \
     --hash=sha256:bc6385ccf87768f029371535312071a2d09e6c9ebf119ac17dbc825a6a56ba53 \
     --hash=sha256:fe56df31033ab0c40af7525f8bf4c487313377bbcfdf94184b701a8ccebc800e
@@ -714,7 +703,6 @@ opentelemetry-semantic-conventions==0.53b1 \
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiokafka
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-pymongo
