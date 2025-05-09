@@ -17,7 +17,7 @@
 
 from ghga_service_commons.api import run_server
 from hexkit.log import configure_logging
-from hexkit.opentelemetry_setup import configure_opentelemetry
+from hexkit.opentelemetry import configure_opentelemetry
 
 from wps.config import Config
 from wps.prepare import prepare_consumer, prepare_rest_app

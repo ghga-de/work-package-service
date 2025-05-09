@@ -4,8 +4,8 @@ version = "4.0.0"
 description = "Work Package Service"
 dependencies = [
     "ghga-event-schemas~=5.0.0",
-    "ghga-service-commons[api,auth,crypt]>=4.0",
-    "hexkit[akafka,mongodb,opentelemetry-akafka,opentelemetry-mongodb,opentelemetry-fastapi]>=4.6.2",
+    "ghga-service-commons[api,auth,crypt]>=4.1",
+    "hexkit[akafka,mongodb,opentelemetry-akafka,opentelemetry-mongodb,opentelemetry-fastapi]>=5.0",
     "httpx>=0.28",
     "typer>=0.15",
 ]

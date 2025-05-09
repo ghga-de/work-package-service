@@ -22,7 +22,7 @@ from datetime import datetime
 
 import httpx
 from ghga_service_commons.utils.utc_dates import UTCDatetime
-from hexkit.opentelemetry_setup import start_span
+from hexkit.opentelemetry import start_span
 from pydantic import Field
 from pydantic_settings import BaseSettings
 

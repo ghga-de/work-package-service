@@ -20,7 +20,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
-from hexkit.opentelemetry_setup import start_span
+from hexkit.opentelemetry import start_span
 
 from wps.adapters.inbound.fastapi_.auth import UserAuthContext, WorkPackageAccessToken
 from wps.adapters.inbound.fastapi_.dummies import WorkPackageRepositoryDummy

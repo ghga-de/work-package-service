@@ -23,3 +23,5 @@ dataset_deletion_type: dataset_deleted
 # the default keys are invalid but set for creating the example specs
 auth_key: "{}"
 work_package_signing_key: "{}"
+
+otel_exporter_endpoint: http://localhost:4318
