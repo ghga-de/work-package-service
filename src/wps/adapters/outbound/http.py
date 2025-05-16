@@ -20,7 +20,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import httpx
-from opentelemetry import trace
+from hexkit.opentelemetry import start_span
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -28,7 +28,6 @@ from wps.ports.outbound.access import AccessCheckPort
 
 __all__ = ["AccessCheckAdapter", "AccessCheckConfig"]
 
-tracer = trace.get_tracer("wps")
 TIMEOUT = 60
 
 
@@ -59,7 +58,7 @@ class AccessCheckAdapter(AccessCheckPort):
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             yield cls(config=config, client=client)
 
-    @tracer.start_as_current_span("AccessCheckAdapter.check_download_access")
+    @start_span()
     async def check_download_access(self, user_id: str, dataset_id: str) -> bool:
         """Check whether the given user has download access for the given dataset."""
         url = f"{self._url}/users/{user_id}/datasets/{dataset_id}"
@@ -70,9 +69,7 @@ class AccessCheckAdapter(AccessCheckPort):
             return False
         raise self.AccessCheckError
 
-    @tracer.start_as_current_span(
-        "AccessCheckAdapter.get_datasets_with_download_access"
-    )
+    @start_span()
     async def get_datasets_with_download_access(self, user_id: str) -> list[str]:
         """Get all datasets that the given user is allowed to download."""
         url = f"{self._url}/users/{user_id}/datasets"

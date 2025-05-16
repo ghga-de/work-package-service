@@ -1,23 +1,13 @@
 [project]
 name = "wps"
-version = "3.1.1"
+version = "4.0.0"
 description = "Work Package Service"
 dependencies = [
     "ghga-event-schemas~=5.0.0",
-    "ghga-service-commons[api,auth,crypt]>=4.0",
-    "hexkit[akafka,mongodb]>=4.3",
+    "ghga-service-commons[api,auth,crypt]>=4.1",
+    "hexkit[akafka,mongodb,opentelemetry-akafka,opentelemetry-mongodb,opentelemetry-fastapi]>=5.0",
     "httpx>=0.28",
     "typer>=0.15",
-    "opentelemetry-api>=1.31.1",
-    "opentelemetry-sdk>=1.31.1",
-    "opentelemetry-exporter-otlp-proto-http>=1.31.1",
-    "opentelemetry-distro>=0.52b1",
-    "opentelemetry-instrumentation>=0.52b1",
-    "opentelemetry-instrumentation-aiokafka>=0.52b1",
-    "opentelemetry-instrumentation-botocore>=0.52b1",
-    "opentelemetry-instrumentation-fastapi>=0.52b1",
-    "opentelemetry-instrumentation-httpx>=0.52b1",
-    "opentelemetry-instrumentation-pymongo>=0.52b1",
 ]
 
 [project.urls]
