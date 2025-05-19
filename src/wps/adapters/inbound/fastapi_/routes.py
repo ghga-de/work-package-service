@@ -38,18 +38,19 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@start_span()
 @router.get(
     "/health",
     summary="health",
     tags=["WorkPackages"],
     status_code=status.HTTP_200_OK,
 )
-@start_span()
 async def health():
     """Used to test if this service is alive"""
     return {"status": "OK"}
 
 
+@start_span()
 @router.post(
     "/work-packages",
     operation_id="create_work_package",
@@ -66,7 +67,6 @@ async def health():
     },
     status_code=201,
 )
-@start_span()
 async def create_work_package(
     creation_data: WorkPackageCreationData,
     repository: WorkPackageRepositoryDummy,
@@ -81,6 +81,7 @@ async def create_work_package(
         raise HTTPException(status_code=403, detail=str(error)) from error
 
 
+@start_span()
 @router.get(
     "/work-packages/{work_package_id}",
     operation_id="get_work_package",
@@ -97,7 +98,6 @@ async def create_work_package(
     },
     status_code=200,
 )
-@start_span()
 async def get_work_package(
     work_package_id: str,
     repository: WorkPackageRepositoryDummy,
@@ -122,6 +122,7 @@ async def get_work_package(
     )
 
 
+@start_span()
 @router.post(
     "/work-packages/{work_package_id}/files/{file_id}/work-order-tokens",
     operation_id="create_work_order_token",
@@ -137,7 +138,6 @@ async def get_work_package(
     },
     status_code=201,
 )
-@start_span()
 async def create_work_order_token(
     work_package_id: str,
     file_id: str,
@@ -164,6 +164,7 @@ async def create_work_order_token(
         raise HTTPException(status_code=403, detail=str(error)) from error
 
 
+@start_span()
 @router.get(
     "/users/{user_id}/datasets",
     operation_id="get_datasets",
@@ -181,7 +182,6 @@ async def create_work_order_token(
     },
     status_code=200,
 )
-@start_span()
 async def get_datasets(
     user_id: str,
     repository: WorkPackageRepositoryDummy,
