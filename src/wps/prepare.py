@@ -43,12 +43,14 @@ async def prepare_core(
     config: Config,
 ) -> AsyncGenerator[WorkPackageRepositoryPort, None]:
     """Constructs and initializes all core components with outbound dependencies."""
-    dao_factory = MongoDbDaoFactory(config=config)
-    work_package_dao = await get_work_package_dao(
-        config=config, dao_factory=dao_factory
-    )
-    dataset_dao = await get_dataset_dao(config=config, dao_factory=dao_factory)
-    async with AccessCheckAdapter.construct(config=config) as download_access_checks:
+    async with (
+        AccessCheckAdapter.construct(config=config) as download_access_checks,
+        MongoDbDaoFactory.construct(config=config) as dao_factory,
+    ):
+        work_package_dao = await get_work_package_dao(
+            config=config, dao_factory=dao_factory
+        )
+        dataset_dao = await get_dataset_dao(config=config, dao_factory=dao_factory)
         yield WorkPackageRepository(
             config=config,
             access_check=download_access_checks,

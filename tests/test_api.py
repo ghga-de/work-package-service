@@ -17,6 +17,7 @@
 """Test the API of the work package service."""
 
 from datetime import datetime, timedelta
+from uuid import uuid4
 
 import pytest
 from fastapi import status
@@ -132,10 +133,16 @@ async def test_create_work_order_token(
     response = await client.get(f"/work-packages/{work_package_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    # try to get a non-existing work package with authorization
+    # try to get a non-existing work package with authorization and malformed ID
 
     response = await client.get(
         "/work-packages/some-work-package-id", headers=headers_for_token(token)
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # try to get a non-existing work package with authorization
+    response = await client.get(
+        f"/work-packages/{uuid4()}", headers=headers_for_token(token)
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -171,7 +178,7 @@ async def test_create_work_order_token(
     # try to get a work order token for a non-existing work package with authorization
 
     response = await client.post(
-        "/work-packages/some-bad-id/files/file-id-1/work-order-tokens",
+        f"/work-packages/{uuid4()}/files/file-id-1/work-order-tokens",
         headers=headers_for_token(token),
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN

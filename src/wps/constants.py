@@ -15,3 +15,4 @@
 """Non-configurable values used in multiple modules"""
 
 WORK_ORDER_TOKEN_VALID_SECONDS = 30
+SERVICE_NAME = "wps"

@@ -18,6 +18,7 @@
 
 import logging
 from datetime import timedelta
+from uuid import UUID
 
 from ghga_service_commons.auth.ghga import AuthContext
 from ghga_service_commons.utils.crypt import encrypt
@@ -191,7 +192,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
     async def get(
         self,
-        work_package_id: str,
+        work_package_id: UUID,
         *,
         check_valid: bool = True,
         work_package_access_token: str | None = None,
@@ -245,7 +246,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     async def work_order_token(
         self,
         *,
-        work_package_id: str,
+        work_package_id: UUID,
         file_id: str,
         check_valid: bool = True,
         work_package_access_token: str | None = None,
