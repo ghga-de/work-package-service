@@ -43,7 +43,7 @@ class V2Migration(MigrationDefinition, Reversible):
             uuid_fields=["_id"], date_fields=["created", "expires"]
         )
 
-        async with self.auto_finalize(coll_names=[WORK_PACKAGES], copy_indexes=False):
+        async with self.auto_finalize(coll_names=[WORK_PACKAGES], copy_indexes=True):
             await self.migrate_docs_in_collection(
                 coll_name=WORK_PACKAGES,
                 change_function=convert_work_packages,
@@ -62,7 +62,7 @@ class V2Migration(MigrationDefinition, Reversible):
                 doc[field] = doc[field].isoformat()
             return doc
 
-        async with self.auto_finalize(coll_names=[WORK_PACKAGES], copy_indexes=False):
+        async with self.auto_finalize(coll_names=[WORK_PACKAGES], copy_indexes=True):
             # Don't provide validation models here
             await self.migrate_docs_in_collection(
                 coll_name=WORK_PACKAGES,
