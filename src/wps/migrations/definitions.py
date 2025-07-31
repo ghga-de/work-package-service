@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Database migration logic for DCS"""
+"""Database migration logic for the WPS."""
 
 from hexkit.providers.mongodb.migrations import (
     Document,
@@ -30,9 +30,8 @@ WORK_PACKAGES = "work_packages"
 class V2Migration(MigrationDefinition, Reversible):
     """Update the stored data to have native-typed UUIDs and datetimes.
     Affected collections:
-    - drs_objects (AccessTimeDrsObject)
-        - object_id, creation_date, and last_accessed
-    - dcsPersistedEvents
+    - work_packages (WorkPackage)
+        - id, created, and expires
     This can be reversed by converting the UUIDs and datetimes back to strings.
     """
 
@@ -63,7 +62,7 @@ class V2Migration(MigrationDefinition, Reversible):
                 doc[field] = doc[field].isoformat()
             return doc
 
-        async with self.auto_finalize(coll_names=[WORK_PACKAGES], copy_indexes=True):
+        async with self.auto_finalize(coll_names=[WORK_PACKAGES], copy_indexes=False):
             # Don't provide validation models here
             await self.migrate_docs_in_collection(
                 coll_name=WORK_PACKAGES,

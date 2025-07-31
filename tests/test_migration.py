@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for DCS database migrations"""
+"""Tests for the WPS database migrations."""
 
 from asyncio import sleep
 from datetime import datetime, timedelta
@@ -48,7 +48,7 @@ async def test_migration_v2(config, mongodb: MongoDbFixture):
             user_id="GHGAuser",
             full_user_name="Test User",
             email="test_user@some.org",
-            user_public_crypt4gh_key="",
+            user_public_crypt4gh_key="some-public-key",
             token_hash=hash_token(generate_work_package_access_token()),
         ).model_dump()
 
