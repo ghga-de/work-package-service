@@ -14,5 +14,8 @@
 # limitations under the License.
 """Non-configurable values used in multiple modules"""
 
+from opentelemetry import trace
+
 WORK_ORDER_TOKEN_VALID_SECONDS = 30
 SERVICE_NAME = "wps"
+TRACER = trace.get_tracer(SERVICE_NAME)

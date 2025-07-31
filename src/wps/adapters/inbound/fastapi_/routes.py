@@ -21,11 +21,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
-from opentelemetry import trace
 
 from wps.adapters.inbound.fastapi_.auth import UserAuthContext, WorkPackageAccessToken
 from wps.adapters.inbound.fastapi_.dummies import WorkPackageRepositoryDummy
-from wps.constants import SERVICE_NAME, WORK_ORDER_TOKEN_VALID_SECONDS
+from wps.constants import TRACER, WORK_ORDER_TOKEN_VALID_SECONDS
 from wps.core.models import (
     Dataset,
     DatasetWithExpiration,
@@ -38,7 +37,6 @@ __all__ = ["router"]
 
 log = logging.getLogger(__name__)
 router = APIRouter()
-tracer = trace.get_tracer(SERVICE_NAME)
 
 
 @router.get(
@@ -47,7 +45,7 @@ tracer = trace.get_tracer(SERVICE_NAME)
     tags=["WorkPackages"],
     status_code=status.HTTP_200_OK,
 )
-@tracer.start_as_current_span("routes.health")
+@TRACER.start_as_current_span("routes.health")
 async def health():
     """Used to test if this service is alive"""
     return {"status": "OK"}
@@ -69,7 +67,7 @@ async def health():
     },
     status_code=201,
 )
-@tracer.start_as_current_span("routes.create_work_package")
+@TRACER.start_as_current_span("routes.create_work_package")
 async def create_work_package(
     creation_data: WorkPackageCreationData,
     repository: WorkPackageRepositoryDummy,
@@ -100,7 +98,7 @@ async def create_work_package(
     },
     status_code=200,
 )
-@tracer.start_as_current_span("routes.get_work_package")
+@TRACER.start_as_current_span("routes.get_work_package")
 async def get_work_package(
     work_package_id: UUID,
     repository: WorkPackageRepositoryDummy,
@@ -140,7 +138,7 @@ async def get_work_package(
     },
     status_code=201,
 )
-@tracer.start_as_current_span("routes.create_work_order_token")
+@TRACER.start_as_current_span("routes.create_work_order_token")
 async def create_work_order_token(
     work_package_id: UUID,
     file_id: str,
@@ -184,7 +182,7 @@ async def create_work_order_token(
     },
     status_code=200,
 )
-@tracer.start_as_current_span("routes.get_datasets")
+@TRACER.start_as_current_span("routes.get_datasets")
 async def get_datasets(
     user_id: str,
     repository: WorkPackageRepositoryDummy,
