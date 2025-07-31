@@ -32,10 +32,8 @@ from wps.migrations import run_db_migrations
 pytestmark = pytest.mark.asyncio()
 
 
-async def test_migration_v2_drs_objects(config, mongodb: MongoDbFixture):
-    """Test the migration to DB version 2 and reversion to DB version 1.
-    This test is only for the DRS objects, which are the main domain object.
-    """
+async def test_migration_v2(config, mongodb: MongoDbFixture):
+    """Test the migration to DB version 2 and reversion to DB version 1."""
     # Generate sample 'old' data that needs to be migrated
     data: list[dict[str, Any]] = []
 
