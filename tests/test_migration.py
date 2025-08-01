@@ -62,7 +62,7 @@ async def test_migration_v2(config, mongodb: MongoDbFixture):
     data.sort(key=lambda x: x["_id"])
     # Clear out anything so we definitely start with an empty collection
     db = mongodb.client[config.db_name]
-    collection = db["work_packages"]
+    collection = db["workPackages"]
     collection.delete_many({})
 
     # Insert the test data
