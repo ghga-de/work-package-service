@@ -40,7 +40,7 @@ class V2Migration(MigrationDefinition, Reversible):
     async def apply(self):
         """Perform the migration."""
         convert_work_packages = convert_uuids_and_datetimes_v6(
-            uuid_fields=["_id"], date_fields=["created", "expires"]
+            uuid_fields=["_id", "user_id"], date_fields=["created", "expires"]
         )
 
         async with self.auto_finalize(coll_names=[WORK_PACKAGES], copy_indexes=True):
@@ -58,6 +58,7 @@ class V2Migration(MigrationDefinition, Reversible):
         async def revert_work_packages(doc: Document) -> Document:
             """Convert the fields back into strings"""
             doc["_id"] = str(doc["_id"])
+            doc["user_id"] = str(doc["user_id"])
             for field in ["created", "expires"]:
                 doc[field] = doc[field].isoformat()
             return doc

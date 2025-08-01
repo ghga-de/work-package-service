@@ -54,6 +54,7 @@ async def test_migration_v2(config, mongodb: MongoDbFixture):
 
         # Convert data to the old format
         old_work_package["_id"] = str(old_work_package.pop("id"))
+        old_work_package["user_id"] = str(old_work_package["user_id"])
         old_work_package["created"] = old_work_package["created"].isoformat()
         old_work_package["expires"] = old_work_package["expires"].isoformat()
         data.append(old_work_package)
@@ -78,6 +79,7 @@ async def test_migration_v2(config, mongodb: MongoDbFixture):
     assert len(migrated_data) == len(data)
     for old, new in zip(data, migrated_data, strict=True):
         assert str(new["_id"]) == old["_id"]
+        assert str(new["user_id"]) == old["user_id"]
 
         new_created = new["created"]
         new_expires = new["expires"]
@@ -86,9 +88,6 @@ async def test_migration_v2(config, mongodb: MongoDbFixture):
         assert isinstance(new["_id"], UUID)
         assert isinstance(new_created, datetime)
         assert isinstance(new_expires, datetime)
-
-        # Make sure the actual ID of the object ID field still matches the old one
-        assert str(new["_id"]) == old["_id"]
 
         # rather than calculating exact date mig results (tested in hexkit), just verify
         #  that it's within half a millisecond
@@ -106,9 +105,11 @@ async def test_migration_v2(config, mongodb: MongoDbFixture):
     assert len(reverted_data) == len(data)
     for reverted, new in zip(reverted_data, migrated_data, strict=True):
         assert isinstance(reverted["_id"], str)
+        assert isinstance(reverted["user_id"], str)
         assert isinstance(reverted["created"], str)
         assert isinstance(reverted["expires"], str)
 
         assert reverted["_id"] == str(new["_id"])
+        assert reverted["user_id"] == str(new["user_id"])
         assert reverted["created"] == new["created"].isoformat()
         assert reverted["expires"] == new["expires"].isoformat()

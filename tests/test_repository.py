@@ -108,7 +108,7 @@ async def test_work_package_and_token_creation(
         "file-id-3": ".bam",
     }
     assert package.user_public_crypt4gh_key == user_public_crypt4gh_key
-    assert package.user_id == auth_context.id
+    assert package.user_id == UUID(auth_context.id)
     assert package.full_user_name == full_user_name
     assert package.email == auth_context.email
     assert package.token_hash == hash_token(wpat)
@@ -152,7 +152,7 @@ async def test_work_package_and_token_creation(
     assert wot_claims == {
         "type": package.type.value,
         "file_id": "file-id-3",
-        "user_id": package.user_id,
+        "user_id": str(package.user_id),
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": package.full_user_name,
         "email": package.email,
@@ -207,7 +207,7 @@ async def test_work_package_and_token_creation(
     assert wot_claims == {
         "type": package.type.value,
         "file_id": "file-id-1",
-        "user_id": package.user_id,
+        "user_id": str(package.user_id),
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": package.full_user_name,
         "email": package.email,

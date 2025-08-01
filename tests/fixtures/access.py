@@ -23,7 +23,7 @@ from ghga_service_commons.utils.utc_dates import UTCDatetime, now_as_utc
 
 from wps.ports.outbound.access import AccessCheckPort
 
-USERS_WITH_DOWNLOAD_ACCESS = ["john-doe@ghga.de"]
+USERS_WITH_DOWNLOAD_ACCESS = [UUID("a86f8281-e18a-429e-88a9-a5c8ea0cf754")]
 DATASETS_WITH_DOWNLOAD_ACCESS = ["some-dataset-id"]
 
 __all__ = ["AccessCheckMock"]
