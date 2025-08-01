@@ -24,7 +24,7 @@ from hexkit.providers.mongodb.migrations.helpers import convert_uuids_and_dateti
 
 from wps.core.models import WorkPackage
 
-WORK_PACKAGES = "work_packages"
+WORK_PACKAGES = "workPackages"
 
 
 class V2Migration(MigrationDefinition, Reversible):
