@@ -16,12 +16,11 @@
 """Module hosting the code to prepare the application by providing dependencies."""
 
 from collections.abc import AsyncGenerator
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext
 from typing import NamedTuple
 
 from fastapi import FastAPI
 from ghga_service_commons.auth.ghga import AuthContext, GHGAAuthContextProvider
-from ghga_service_commons.utils.context import asyncnullcontext
 from hexkit.providers.akafka import KafkaEventPublisher, KafkaEventSubscriber
 from hexkit.providers.mongodb import MongoDbDaoFactory
 
@@ -66,7 +65,7 @@ def _prepare_core_with_override(
 ) -> AbstractAsyncContextManager[WorkPackageRepositoryPort]:
     """Get context manager for preparing the core components or provide override."""
     return (
-        asyncnullcontext(work_package_repo_override)
+        nullcontext(work_package_repo_override)
         if work_package_repo_override
         else prepare_core(config=config)
     )

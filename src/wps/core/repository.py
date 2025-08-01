@@ -109,8 +109,14 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         - the specified work type is not supported
         - the files in th dataset cannot be determined
         - no existing files in the dataset have been specified
-        """
-        user_id = auth_context.id
+        """ 
+        try:
+            user_id = UUID(auth_context.id)
+        except ValueError as error:
+            access_error = self.WorkPackageAccessError("Malformed user ID supplied")
+            log.error(access_error)
+            raise access_error from error
+        
         if user_id is None:
             access_error = self.WorkPackageAccessError("No internal user specified")
             log.error(access_error)
@@ -332,7 +338,13 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
         Note that currently only downloadable datasets are supported.
         """
-        user_id = auth_context.id
+        try:
+            user_id = UUID(auth_context.id)
+        except ValueError as error:
+            access_error = self.WorkPackageAccessError("Malformed user ID supplied")
+            log.error(access_error)
+            raise access_error from error
+        
         if user_id is None:
             access_error = self.WorkPackageAccessError("No internal user specified")
             log.error(access_error)

@@ -45,7 +45,7 @@ async def test_migration_v2(config, mongodb: MongoDbFixture):
             expires=now_as_utc(),
             id=uuid4(),
             dataset_id=f"GHGADataset{i}",
-            user_id="GHGAuser",
+            user_id=uuid4(),
             full_user_name="Test User",
             email="test_user@some.org",
             user_public_crypt4gh_key="some-public-key",

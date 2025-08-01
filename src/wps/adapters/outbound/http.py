@@ -19,6 +19,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime
+from uuid import UUID
 
 import httpx
 from ghga_service_commons.utils.utc_dates import UTCDatetime
@@ -63,7 +64,7 @@ class AccessCheckAdapter(AccessCheckPort):
 
     @TRACER.start_as_current_span("AccessCheckAdapter.check_download_access")
     async def check_download_access(
-        self, user_id: str, dataset_id: str
+        self, user_id: UUID, dataset_id: str
     ) -> UTCDatetime | None:
         """Check until when the given user has download access for the given dataset."""
         url = f"{self._url}/users/{user_id}/datasets/{dataset_id}"
@@ -84,7 +85,7 @@ class AccessCheckAdapter(AccessCheckPort):
         "AccessCheckAdapter.get_accessible_datasets_with_expiration"
     )
     async def get_accessible_datasets_with_expiration(
-        self, user_id: str
+        self, user_id: UUID
     ) -> dict[str, UTCDatetime]:
         """Get all datasets that the given user is allowed to download.
 
