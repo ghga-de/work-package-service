@@ -32,7 +32,7 @@ class AccessCheckPort(ABC):
 
     @abstractmethod
     async def check_download_access(
-        self, user_id: UUID , dataset_id: str
+        self, user_id: UUID, dataset_id: str
     ) -> UTCDatetime | None:
         """Check until when the given user has download access for the given dataset."""
 
