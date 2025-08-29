@@ -14,9 +14,10 @@ service_instance_id: 'wps_1'
 kafka_servers: ["kafka:9092"]
 kafka_enable_dlq: True
 
-download_access_url: "http://127.0.0.1:8080/download-access"
+access_url: "http://127.0.0.1:8080"
 
-dataset_change_topic: metadata_datasets
+upload_box_topic: upload-boxes
+dataset_change_topic: metadata-datasets
 dataset_upsertion_type: dataset_created
 dataset_deletion_type: dataset_deleted
 

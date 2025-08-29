@@ -128,6 +128,8 @@ The service requires the following configuration parameters:
 
 - <a id="properties/work_packages_collection"></a>**`work_packages_collection`** *(string)*: The name of the database collection for work packages. Default: `"workPackages"`.
 
+- <a id="properties/upload_boxes_collection"></a>**`upload_boxes_collection`** *(string)*: The name of the database collection for upload boxes. Default: `"uploadBoxes"`.
+
 - <a id="properties/work_package_valid_days"></a>**`work_package_valid_days`** *(integer)*: How many days a work package (and its access token) stays valid. Default: `30`.
 
 - <a id="properties/work_package_signing_key"></a>**`work_package_signing_key`** *(string, format: password, required and write-only)*: The private key for signing work order tokens.
@@ -414,6 +416,16 @@ The service requires the following configuration parameters:
   ```
 
 
+- <a id="properties/upload_box_topic"></a>**`upload_box_topic`** *(string, required)*: Name of the event topic containing upload box events.
+
+
+  Examples:
+
+  ```json
+  "upload-boxes"
+  ```
+
+
 - <a id="properties/dataset_change_topic"></a>**`dataset_change_topic`** *(string, required)*: Name of the topic announcing, among other things, the list of files included in a new dataset.
 
 
@@ -444,13 +456,13 @@ The service requires the following configuration parameters:
   ```
 
 
-- <a id="properties/download_access_url"></a>**`download_access_url`** *(string, required)*: URL pointing to the internal download access API.
+- <a id="properties/access_url"></a>**`access_url`** *(string, required)*: URL pointing to the internal access API (supports both download and upload access).
 
 
   Examples:
 
   ```json
-  "http://127.0.0.1/download-access"
+  "http://127.0.0.1/"
   ```
 
 

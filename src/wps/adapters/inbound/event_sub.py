@@ -24,19 +24,41 @@ from ghga_event_schemas import pydantic_ as event_schemas
 from ghga_event_schemas.configs import DatasetEventsConfig
 from ghga_event_schemas.validation import get_validated_payload
 from hexkit.custom_types import Ascii, JsonObject
+from hexkit.protocols.daosub import DaoSubscriberProtocol
 from hexkit.protocols.eventsub import EventSubscriberProtocol
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 from wps.constants import TRACER
-from wps.core.models import Dataset, DatasetFile, WorkType
+from wps.core.models import Dataset, DatasetFile, UploadBox, WorkPackageType
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
 
-__all__ = ["EventSubTranslator", "EventSubTranslatorConfig"]
+__all__ = [
+    "EventSubTranslator",
+    "EventSubTranslatorConfig",
+    "OutboxSubTranslator",
+    "OutboxSubTranslatorConfig",
+]
 
 log = logging.getLogger(__name__)
 
 
 class EventSubTranslatorConfig(DatasetEventsConfig):
     """Config for dataset creation related events."""
+
+
+class OutboxSubTranslatorConfig(BaseSettings):
+    """Config for listening to events carrying state updates for UploadBox objects
+
+    The event types are hardcoded by `hexkit`.
+    """
+
+    # TODO: Replace this with standardized config from ghga-event-schemas when available
+    upload_box_topic: str = Field(
+        ...,
+        description="Name of the event topic containing upload box events",
+        examples=["upload-boxes"],
+    )
 
 
 class EventSubTranslator(EventSubscriberProtocol):
@@ -69,7 +91,7 @@ class EventSubTranslator(EventSubscriberProtocol):
             schema=event_schemas.MetadataDatasetOverview,
         )
         try:
-            stage = WorkType[validated_payload.stage.name]
+            stage = WorkPackageType[validated_payload.stage.name]
         except KeyError:
             # stage does not correspond to a work type, ignore event
             log.info(
@@ -127,3 +149,30 @@ class EventSubTranslator(EventSubscriberProtocol):
             await self._handle_upsertion(payload)
         elif type_ == self._dataset_deletion_type:
             await self._handle_deletion(payload)
+
+
+class OutboxSubTranslator(DaoSubscriberProtocol):
+    """Outbox-style event subscriber for UploadBox events"""
+
+    event_topic: str
+    dto_model = UploadBox
+
+    def __init__(
+        self,
+        *,
+        config: OutboxSubTranslatorConfig,
+        work_package_repository: WorkPackageRepositoryPort,
+    ):
+        self.event_topic = config.upload_box_topic
+        self._repository = work_package_repository
+
+    async def changed(self, resource_id: str, update: UploadBox) -> None:
+        """Consume a change event (created or updated) for the resource with the given
+        ID.
+        """
+        await self._repository.register_upload_box(upload_box=update)
+
+    async def deleted(self, resource_id: str) -> None:
+        """Consume an event indicating the deletion of the resource with the given ID."""
+        with suppress(self._repository.UploadBoxNotFoundError):  # if already deleted
+            await self._repository.delete_upload_box(UUID(resource_id))

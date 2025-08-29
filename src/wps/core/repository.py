@@ -22,19 +22,23 @@ from uuid import UUID
 
 from ghga_service_commons.auth.ghga import AuthContext
 from ghga_service_commons.utils.crypt import encrypt
-from ghga_service_commons.utils.utc_dates import now_as_utc
+from ghga_service_commons.utils.utc_dates import UTCDatetime, now_as_utc
 from jwcrypto import jwk
-from pydantic import Field, SecretStr
+from pydantic import UUID4, Field, SecretStr
 from pydantic_settings import BaseSettings
 
 from wps.core.models import (
+    CreateFileWorkOrder,
     Dataset,
     DatasetWithExpiration,
-    WorkOrderToken,
+    DownloadWorkOrder,
+    UploadBox,
+    UploadFileWorkOrder,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
-    WorkType,
+    WorkPackageType,
+    WOTWorkType,
 )
 from wps.core.tokens import (
     generate_work_package_access_token,
@@ -46,6 +50,7 @@ from wps.ports.outbound.access import AccessCheckPort
 from wps.ports.outbound.dao import (
     DatasetDaoPort,
     ResourceNotFoundError,
+    UploadBoxDaoPort,
     WorkPackageDaoPort,
 )
 
@@ -62,6 +67,10 @@ class WorkPackageConfig(BaseSettings):
     work_packages_collection: str = Field(
         "workPackages",
         description="The name of the database collection for work packages",
+    )
+    upload_boxes_collection: str = Field(
+        "uploadBoxes",
+        description="The name of the database collection for upload boxes",
     )
     work_package_valid_days: int = Field(
         30,
@@ -83,6 +92,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         config: WorkPackageConfig,
         access_check: AccessCheckPort,
         dataset_dao: DatasetDaoPort,
+        upload_box_dao: UploadBoxDaoPort,
         work_package_dao: WorkPackageDaoPort,
     ):
         """Initialize with specific configuration and outbound adapter."""
@@ -96,6 +106,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise key_error
         self._access = access_check
         self._dataset_dao = dataset_dao
+        self._upload_box_dao = upload_box_dao
         self._dao = work_package_dao
 
     async def create(
@@ -123,18 +134,47 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise access_error
 
         dataset_id = creation_data.dataset_id
+        box_id = creation_data.box_id
         work_type = creation_data.type
 
+        if work_type == WorkPackageType.DOWNLOAD:
+            if not dataset_id:
+                access_error = self.WorkPackageAccessError(
+                    "dataset_id required for download work packages"
+                )
+                log.error(access_error)
+                raise access_error
+            return await self._create_download_work_package(
+                creation_data, auth_context, user_id, dataset_id
+            )
+        elif work_type == WorkPackageType.UPLOAD:
+            if not box_id:
+                access_error = self.WorkPackageAccessError(
+                    "box_id required for upload work packages"
+                )
+                log.error(access_error)
+                raise access_error
+            return await self._create_upload_work_package(
+                creation_data, auth_context, user_id, box_id
+            )
+        else:
+            access_error = self.WorkPackageAccessError("Unsupported work type")
+            log.error(access_error, extra={"work_type": work_type})
+            raise access_error
+
+    async def _create_download_work_package(
+        self,
+        creation_data: WorkPackageCreationData,
+        auth_context: AuthContext,
+        user_id: UUID,
+        dataset_id: str,
+    ) -> WorkPackageCreationResponse:
+        """Create a download work package."""
         extra = {  # only used for logging
             "user_id": user_id,
             "dataset_id": dataset_id,
-            "work_type": work_type,
+            "work_type": WorkPackageType.DOWNLOAD,
         }
-
-        if work_type != WorkType.DOWNLOAD:
-            access_error = self.WorkPackageAccessError("Unsupported work type")
-            log.error(access_error, extra=extra)
-            raise access_error
 
         expires = await self._access.check_download_access(user_id, dataset_id)
         if not expires:
@@ -168,6 +208,52 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             file.id: file.extension for file in dataset.files if file.id in file_id_set
         }
 
+        return await self._create_work_package_record(
+            creation_data, auth_context, user_id, expires, files, dataset_id=dataset_id
+        )
+
+    async def _create_upload_work_package(
+        self,
+        creation_data: WorkPackageCreationData,
+        auth_context: AuthContext,
+        user_id: UUID,
+        box_id: UUID,
+    ) -> WorkPackageCreationResponse:
+        """Create an upload work package."""
+        extra = {  # only used for logging
+            "user_id": user_id,
+            "box_id": box_id,
+            "work_type": WorkPackageType.UPLOAD,
+        }
+
+        expires = await self._access.check_upload_access(user_id, box_id)
+        if not expires:
+            access_error = self.WorkPackageAccessError(
+                "Missing upload box access permission"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        # For upload work packages, files will be created dynamically
+        # so we start with an empty files dict
+        files: dict[str, str] = {}
+
+        return await self._create_work_package_record(
+            creation_data, auth_context, user_id, expires, files, box_id=box_id
+        )
+
+    async def _create_work_package_record(  # noqa: PLR0913
+        self,
+        creation_data: WorkPackageCreationData,
+        auth_context: AuthContext,
+        user_id: UUID,
+        expires: UTCDatetime,
+        files: dict[str, str],
+        *,
+        dataset_id: str | None = None,
+        box_id: UUID4 | None = None,
+    ) -> WorkPackageCreationResponse:
+        """Create the work package database record."""
         full_user_name = auth_context.name
         if auth_context.title:
             full_user_name = auth_context.title + " " + full_user_name
@@ -180,7 +266,8 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
         work_package = WorkPackage(
             dataset_id=dataset_id,
-            type=work_type,
+            box_id=box_id,
+            type=creation_data.type,
             files=files,
             user_id=user_id,
             full_user_name=full_user_name,
@@ -192,9 +279,43 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         )
         await self._dao.insert(work_package)
         encrypted_token = encrypt(token, user_public_crypt4gh_key)
+
         return WorkPackageCreationResponse(
             id=str(work_package.id), token=encrypted_token, expires=expires
         )
+
+    def _validate_work_package(self, work_package: WorkPackage):
+        """Validate certain work package details.
+
+        Raises a WorkPackageAccessError in the following cases:
+        - the work package has expired
+        - the work package is for download and the dataset ID is missing
+        - the work package is for upload and the box ID is missing
+        """
+        extra = {"work_package_id": work_package.id}  # only used for logging
+        if not work_package.created <= now_as_utc() <= work_package.expires:
+            access_error = self.WorkPackageAccessError("Work package has expired")
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        dataset_id = work_package.dataset_id
+        if work_package.type == WorkPackageType.DOWNLOAD and not dataset_id:
+            access_error = self.WorkPackageAccessError(
+                "Invalid download work package: missing dataset_id"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error
+        elif work_package.type == WorkPackageType.UPLOAD and not work_package.box_id:
+            access_error = self.WorkPackageAccessError(
+                "Invalid upload work package: missing box_id"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        if work_package.type not in (WorkPackageType.DOWNLOAD, WorkPackageType.UPLOAD):
+            access_error = self.WorkPackageAccessError("Unsupported work type")
+            log.error(access_error, extra=extra)
+            raise access_error
 
     async def get(
         self,
@@ -207,7 +328,8 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
         In the following cases, a WorkPackageAccessError is raised:
         - if a work package with the given work_package_id does not exist
-        - if check_valid is set and the work package has expired
+        - if check_valid is set and the work package has expired or the box/dataset
+          ID is missing
         - if a work_package_access_token is specified and it does not match
           the token hash that is stored in the work package
         """
@@ -230,29 +352,32 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise access_error
 
         if check_valid:
-            if not work_package.created <= now_as_utc() <= work_package.expires:
-                access_error = self.WorkPackageAccessError("Work package has expired")
+            self._validate_work_package(work_package)
+
+            # Check access based on work package type
+            if work_package.type == WorkPackageType.DOWNLOAD:
+                has_access = await self._access.check_download_access(
+                    work_package.user_id,
+                    work_package.dataset_id,  # type: ignore
+                )
+            elif work_package.type == WorkPackageType.UPLOAD:
+                has_access = await self._access.check_upload_access(
+                    work_package.user_id,
+                    work_package.box_id,  # type: ignore
+                )
+
+            if not has_access:
+                access_error = self.WorkPackageAccessError(
+                    f"{work_package.type.value.title()} access has been revoked"
+                )
                 log.error(access_error, extra=extra)
                 raise access_error
-
-            if work_package.type != WorkType.DOWNLOAD:
-                access_error = self.WorkPackageAccessError("Unsupported work type")
-                log.error(access_error, extra=extra)
-                raise access_error
-
-            if not await self._access.check_download_access(
-                work_package.user_id, work_package.dataset_id
-            ):
-                access_error = self.WorkPackageAccessError("Access has been revoked")
-                log.error(access_error, extra=extra)
-                raise access_error
-
         return work_package
 
-    async def work_order_token(
+    async def get_download_wot(
         self,
         *,
-        work_package_id: UUID,
+        work_package_id: UUID4,
         file_id: str,
         check_valid: bool = True,
         work_package_access_token: str | None = None,
@@ -260,12 +385,11 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         """Create a work order token for a given work package and file.
 
         In the following cases, a WorkPackageAccessError is raised:
-        - if the work package does not exist
-        - if the file_id is not contained in the work package
+        - if a work package with the given work_package_id does not exist
         - if check_valid is set and the work package has expired
+        - if the work package type is not DOWNLOAD
         - if a work_package_access_token is specified and it does not match
           the token hash that is stored in the work package
-        - if the access permission has been revoked
         """
         extra = {  # only used for logging
             "work_package_id": work_package_id,
@@ -279,6 +403,17 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             work_package_access_token=work_package_access_token,
         )
 
+        extra["work_package_type"] = work_package.type
+        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
+
+        if work_package.type != WorkPackageType.DOWNLOAD:
+            access_error = self.WorkPackageAccessError(
+                "Work package type must be DOWNLOAD to obtain a download access WOT"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        # For Download-type work packages, the file ID must be in the list of files
         if file_id not in work_package.files:
             access_error = self.WorkPackageAccessError(
                 "File is not contained in work package"
@@ -286,15 +421,199 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(access_error, extra=extra)
             raise access_error
 
-        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
-        wot = WorkOrderToken(
-            type=work_package.type,
+        wot = DownloadWorkOrder(
+            work_type=WOTWorkType.DOWNLOAD,
             file_id=file_id,
             user_id=work_package.user_id,
-            user_public_crypt4gh_key=user_public_crypt4gh_key,
             full_user_name=work_package.full_user_name,
             email=work_package.email,
+            user_public_crypt4gh_key=user_public_crypt4gh_key,
         )
+        signed_wot = sign_work_order_token(wot, self._signing_key)
+        return encrypt(signed_wot, user_public_crypt4gh_key)
+
+    async def get_upload_wot(  # noqa: PLR0913
+        self,
+        *,
+        work_package_id: UUID4,
+        work_type: WOTWorkType,
+        box_id: UUID4,
+        alias: str | None = None,
+        file_id: UUID4 | None = None,
+        check_valid: bool = True,
+        work_package_access_token: str | None = None,
+    ) -> str:
+        """Create a work order token for a given work package and file.
+
+        In the following cases, a WorkPackageAccessError is raised:
+        - if a work package with the given work_package_id does not exist
+        - if the work type is not valid, i.e. one of create, upload, close, or delete
+        - if the work_type requires parameters that are not provided (alias or file ID)
+        - if check_valid is set and the work package has expired
+        - if a work_package_access_token is specified and it does not match
+          the token hash that is stored in the work package
+        """
+        extra = {  # only used for logging
+            "work_package_id": work_package_id,
+            "file_id": file_id,
+            "alias": alias,
+            "work_token_type": work_type,
+            "check_valid": check_valid,
+        }
+
+        work_package = await self.get(
+            work_package_id,
+            check_valid=check_valid,
+            work_package_access_token=work_package_access_token,
+        )
+
+        extra["work_package_type"] = work_package.type
+        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
+
+        if work_type == WOTWorkType.CREATE:
+            if not alias:
+                access_error = self.WorkPackageAccessError(
+                    "Alias must be provided for file creation WOTs"
+                )
+                log.error(access_error, extra=extra)
+                raise access_error
+            wot = CreateFileWorkOrder(
+                work_type=work_type,
+                alias=alias,
+                box_id=box_id,
+                user_id=work_package.user_id,
+                full_user_name=work_package.full_user_name,
+                email=work_package.email,
+                user_public_crypt4gh_key=user_public_crypt4gh_key,
+            )
+        elif work_type in [WOTWorkType.UPLOAD, WOTWorkType.CLOSE, WOTWorkType.DELETE]:
+            if not file_id:
+                access_error = self.WorkPackageAccessError(
+                    "File ID must be provided for file upload WOTs"
+                )
+                log.error(access_error, extra=extra)
+                raise access_error
+            wot = UploadFileWorkOrder(
+                work_type=work_type,
+                box_id=box_id,
+                file_id=file_id,
+                user_id=work_package.user_id,
+                full_user_name=work_package.full_user_name,
+                email=work_package.email,
+                user_public_crypt4gh_key=user_public_crypt4gh_key,
+            )
+        else:
+            access_error = self.WorkPackageAccessError(
+                f"Unsupported Work Order Token type: {work_type.value}"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        signed_wot = sign_work_order_token(wot, self._signing_key)
+        return encrypt(signed_wot, user_public_crypt4gh_key)
+
+    async def work_order_token_flexible(  # noqa: PLR0913
+        self,
+        work_package_id: UUID,
+        work_type: str,
+        *,
+        alias: str | None = None,
+        file_id: str | None = None,
+        check_valid: bool = True,
+        work_package_access_token: str | None = None,
+    ) -> str:
+        """Create a flexible work order token for various upload operations.
+
+        In the following cases, a WorkPackageAccessError is raised:
+        - if a work package with the given work_package_id does not exist
+        - if check_valid is set and the work package has expired
+        - if a work_package_access_token is specified and it does not match
+          the token hash that is stored in the work package
+        - if the work_type requires parameters that are not provided
+        """
+        extra = {  # only used for logging
+            "work_package_id": work_package_id,
+            "work_type": work_type,
+            "check_valid": check_valid,
+        }
+
+        work_package = await self.get(
+            work_package_id,
+            check_valid=check_valid,
+            work_package_access_token=work_package_access_token,
+        )
+
+        # Only support upload work packages for now
+        if work_package.type != WorkPackageType.UPLOAD:
+            access_error = self.WorkPackageAccessError(
+                "Flexible work order tokens only supported for upload work packages"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        if not work_package.box_id:
+            access_error = self.WorkPackageAccessError(
+                "Upload work package missing box_id"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        # Create the appropriate WOT based on work_type
+        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
+
+        if work_type == WOTWorkType.CREATE.value:
+            if not alias:
+                access_error = self.WorkPackageAccessError(
+                    "Alias is required for CREATE work type"
+                )
+                log.error(access_error, extra=extra)
+                raise access_error
+
+            wot = CreateFileWorkOrder(
+                work_type=WOTWorkType.CREATE,
+                alias=alias,
+                box_id=work_package.box_id,
+                user_id=work_package.user_id,
+                full_user_name=work_package.full_user_name,
+                email=work_package.email,
+                user_public_crypt4gh_key=user_public_crypt4gh_key,
+            )
+        elif work_type in [
+            WOTWorkType.UPLOAD.value,
+            WOTWorkType.CLOSE.value,
+            WOTWorkType.DELETE.value,
+        ]:
+            if not file_id:
+                access_error = self.WorkPackageAccessError(
+                    f"File ID is required for {work_type} work type"
+                )
+                log.error(access_error, extra=extra)
+                raise access_error
+
+            try:
+                file_uuid = UUID(file_id)
+            except ValueError as error:
+                access_error = self.WorkPackageAccessError("Invalid file ID format")
+                log.error(access_error, extra=extra)
+                raise access_error from error
+
+            wot = UploadFileWorkOrder(
+                work_type=WOTWorkType(work_type),
+                file_id=file_uuid,
+                box_id=work_package.box_id,
+                user_id=work_package.user_id,
+                full_user_name=work_package.full_user_name,
+                email=work_package.email,
+                user_public_crypt4gh_key=user_public_crypt4gh_key,
+            )
+        else:
+            access_error = self.WorkPackageAccessError(
+                f"Unsupported work type: {work_type}"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error
+
+        # Sign and encrypt the token
         signed_wot = sign_work_order_token(wot, self._signing_key)
         return encrypt(signed_wot, user_public_crypt4gh_key)
 
@@ -327,7 +646,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise dataset_not_found_error from error
 
     async def get_datasets(
-        self, *, auth_context: AuthContext, work_type: WorkType | None = None
+        self, *, auth_context: AuthContext, work_type: WorkPackageType | None = None
     ) -> list[DatasetWithExpiration]:
         """Get the list of all datasets accessible to the authenticated user.
 
@@ -350,10 +669,19 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(access_error)
             raise access_error
 
-        if work_type is not None and work_type != WorkType.DOWNLOAD:
+        if work_type is not None and work_type not in [
+            WorkPackageType.DOWNLOAD,
+            WorkPackageType.UPLOAD,
+        ]:
             access_error = self.WorkPackageAccessError("Unsupported work type")
             log.error(access_error, extra={"work_type": work_type})
             raise access_error
+
+        # For now, only support download datasets
+        # Upload boxes will be handled by separate methods
+        if work_type == WorkPackageType.UPLOAD:
+            # Return empty list for upload work type as datasets don't apply
+            return []
 
         dataset_id_to_expiration = (
             await self._access.get_accessible_datasets_with_expiration(user_id)
@@ -370,3 +698,56 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             )
             datasets_with_expiration.append(dataset_with_expiration)
         return datasets_with_expiration
+
+    async def register_upload_box(self, upload_box: UploadBox) -> None:
+        """Register an upload box."""
+        # Implementation will be added when upload box DAO is available
+        # For now, this is a placeholder
+        pass
+
+    async def delete_upload_box(self, box_id: UUID4) -> None:
+        """Delete an upload box with the given ID."""
+        # Implementation will be added when upload box DAO is available
+        # For now, this is a placeholder
+        pass
+
+    async def get_upload_box(self, box_id: UUID4) -> UploadBox:
+        """Get a registered upload box using the given ID.
+
+        If the upload box does not exist, an UploadBoxNotFoundError will be raised.
+        """
+        # Implementation will be added when upload box DAO is available
+        # For now, return a placeholder
+        raise self.UploadBoxNotFoundError(
+            "Upload box functionality not yet implemented"
+        )
+
+    async def get_upload_boxes(self, *, auth_context: AuthContext) -> list[UploadBox]:
+        """Get the list of all upload boxes accessible to the authenticated user."""
+        try:
+            user_id = UUID(auth_context.id)
+        except ValueError as error:
+            access_error = self.WorkPackageAccessError("Malformed user ID supplied")
+            log.error(access_error)
+            raise access_error from error
+
+        if user_id is None:
+            access_error = self.WorkPackageAccessError("No internal user specified")
+            log.error(access_error)
+            raise access_error
+
+        # Get accessible upload boxes from access service
+        box_id_to_expiration = await self._access.get_accessible_boxes_with_expiration(
+            user_id
+        )
+
+        upload_boxes: list[UploadBox] = []
+        for box_id in box_id_to_expiration:
+            try:
+                upload_box = await self.get_upload_box(box_id)
+                upload_boxes.append(upload_box)
+            except self.UploadBoxNotFoundError:
+                log.debug("Upload box '%s' not found, continuing...", box_id)
+                continue
+
+        return upload_boxes

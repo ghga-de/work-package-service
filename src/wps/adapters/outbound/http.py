@@ -38,10 +38,10 @@ TIMEOUT = 60
 class AccessCheckConfig(BaseSettings):
     """Config parameters for checking dataset access."""
 
-    download_access_url: str = Field(
+    access_url: str = Field(
         ...,
-        examples=["http://127.0.0.1/download-access"],
-        description="URL pointing to the internal download access API.",
+        examples=["http://127.0.0.1/"],
+        description="URL pointing to the internal access API (supports both download and upload access).",
     )
 
 
@@ -50,7 +50,7 @@ class AccessCheckAdapter(AccessCheckPort):
 
     def __init__(self, *, config: AccessCheckConfig, client: httpx.AsyncClient):
         """Configure the access grant adapter."""
-        self._url = config.download_access_url
+        self._url = config.access_url
         self._client = client
 
     @classmethod
@@ -99,6 +99,50 @@ class AccessCheckAdapter(AccessCheckPort):
                 return {
                     dataset_id: datetime.fromisoformat(valid_until)
                     for dataset_id, valid_until in dataset_ids.items()
+                }
+            except (ValueError, TypeError) as error:
+                raise self.AccessCheckError from error
+        if response.status_code == httpx.codes.NOT_FOUND:
+            return {}
+        raise self.AccessCheckError
+
+    @TRACER.start_as_current_span("AccessCheckAdapter.check_upload_access")
+    async def check_upload_access(
+        self, user_id: UUID, box_id: UUID
+    ) -> UTCDatetime | None:
+        """Check until when the given user has upload access for the given box."""
+        url = f"{self._url}/upload-access/users/{user_id}/boxes/{box_id}"
+        response = await self._client.get(url)
+        if response.status_code == httpx.codes.OK:
+            valid_until = response.json()
+            if not valid_until:
+                return None
+            try:
+                return datetime.fromisoformat(valid_until)
+            except (ValueError, TypeError) as error:
+                raise self.AccessCheckError from error
+        if response.status_code == httpx.codes.NOT_FOUND:
+            return None
+        raise self.AccessCheckError
+
+    @TRACER.start_as_current_span(
+        "AccessCheckAdapter.get_accessible_boxes_with_expiration"
+    )
+    async def get_accessible_boxes_with_expiration(
+        self, user_id: UUID
+    ) -> dict[str, UTCDatetime]:
+        """Get all upload boxes that the given user is allowed to upload to.
+
+        This method returns a mapping from box IDs to access expiration dates.
+        """
+        url = f"{self._url}/upload-access/users/{user_id}/boxes"
+        response = await self._client.get(url)
+        if response.status_code == httpx.codes.OK:
+            box_ids = response.json()
+            try:
+                return {
+                    box_id: datetime.fromisoformat(valid_until)
+                    for box_id, valid_until in box_ids.items()
                 }
             except (ValueError, TypeError) as error:
                 raise self.AccessCheckError from error
