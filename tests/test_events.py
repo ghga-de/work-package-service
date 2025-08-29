@@ -18,6 +18,8 @@
 
 import asyncio
 from collections.abc import AsyncGenerator
+from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
@@ -25,6 +27,7 @@ from hexkit.providers.akafka.testutils import KafkaFixture
 from hexkit.providers.mongodb.testutils import MongoDbFixture
 
 from wps.config import Config
+from wps.core.models import UploadBox
 from wps.prepare import Consumer, prepare_consumer
 
 from .fixtures import (  # noqa: F401
@@ -226,3 +229,59 @@ async def test_consume_from_retry(
             break
     else:
         assert False, "dataset cannot be retrieved"
+
+
+async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
+    """Test consuming an 'upserted' & 'deleted' upload box event in the outbox consumer."""
+    # Create a test upload box
+    test_box_id = uuid4()
+    test_upload_box = UploadBox(
+        id=test_box_id,
+        title="Test Upload Box",
+        description="A test upload box for testing outbox events",
+    )
+
+    # Create a mock repository to track calls
+    mock_repository = AsyncMock()
+
+    # Create a consumer with the mock repository
+    async with prepare_consumer(
+        config=config, work_package_repo_override=mock_repository
+    ) as consumer:
+        subscriber = consumer.event_subscriber
+
+        # Publish an outbox 'upserted' event for upload box
+        await kafka.publish_event(
+            payload=test_upload_box.model_dump(),
+            topic=config.upload_box_topic,
+            type_="upserted",
+            key=str(test_box_id),
+        )
+
+        # Process the event
+        await asyncio.wait_for(subscriber.run(forever=False), timeout=TIMEOUT)
+
+        # Wait a bit for async processing
+        await asyncio.sleep(RETRY_INTERVAL)
+
+        # Verify that register_upload_box was called with the correct upload box
+        mock_repository.register_upload_box.assert_called_once_with(
+            upload_box=test_upload_box
+        )
+
+        # Publish an outbox 'deleted' event
+        await kafka.publish_event(
+            payload={},
+            topic=config.upload_box_topic,
+            type_="deleted",
+            key=str(test_box_id),
+        )
+
+        # Process the event
+        await asyncio.wait_for(subscriber.run(forever=False), timeout=TIMEOUT)
+
+        # Wait a bit for async processing
+        await asyncio.sleep(RETRY_INTERVAL)
+
+        # Verify that delete_upload_box was called with the correct upload box ID
+        mock_repository.delete_upload_box.assert_called_once_with(test_box_id)
