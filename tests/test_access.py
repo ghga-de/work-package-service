@@ -35,7 +35,7 @@ DOWNLOAD_ACCESS_URL = "http://test-access:1234"
 @pytest_asyncio.fixture(name="access_check", scope="function")
 async def fixture_access_check() -> AsyncGenerator[AccessCheckAdapter, None]:
     """Get configured access test adapter."""
-    config = AccessCheckConfig(download_access_url=DOWNLOAD_ACCESS_URL)
+    config = AccessCheckConfig(access_url=DOWNLOAD_ACCESS_URL)
     async with AccessCheckAdapter.construct(config=config) as adapter:
         yield adapter
 

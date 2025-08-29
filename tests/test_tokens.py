@@ -16,19 +16,28 @@
 
 """Test the tokens module."""
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
+import pytest
 from ghga_service_commons.utils.jwt_helpers import (
     decode_and_validate_token,
     generate_jwk,
 )
 
-from wps.core.models import WorkOrderToken, WorkType
+from wps.core.models import (
+    BaseWorkOrderToken,
+    CreateFileWorkOrder,
+    DownloadWorkOrder,
+    UploadFileWorkOrder,
+    WOTWorkType,
+)
 from wps.core.tokens import (
     generate_work_package_access_token,
     hash_token,
     sign_work_order_token,
 )
+
+USER_ID = UUID("32a19d10-2d9b-420d-93f8-1206559c6cb2")
 
 
 def test_generate_work_package_access_token():
@@ -57,17 +66,40 @@ def test_hash_token():
     assert hashed_another_token != hashed_token
 
 
-def test_sign_work_order_token():
+@pytest.mark.parametrize(
+    "work_order_token",
+    [
+        DownloadWorkOrder(
+            work_type=WOTWorkType.DOWNLOAD,
+            file_id="some-file-id",
+            user_id=USER_ID,
+            full_user_name="John Doe",
+            email="john.doe@test.com",
+            user_public_crypt4gh_key="some-public-key",
+        ),
+        CreateFileWorkOrder(
+            work_type=WOTWorkType.CREATE,
+            box_id=uuid4(),
+            alias="file1",
+            user_id=USER_ID,
+            full_user_name="John Doe",
+            email="john.doe@test.com",
+            user_public_crypt4gh_key="some-public-key",
+        ),
+        UploadFileWorkOrder(
+            work_type=WOTWorkType.CREATE,
+            box_id=uuid4(),
+            file_id=uuid4(),
+            user_id=USER_ID,
+            full_user_name="John Doe",
+            email="john.doe@test.com",
+            user_public_crypt4gh_key="some-public-key",
+        ),
+    ],
+)
+def test_sign_work_order_token(work_order_token: BaseWorkOrderToken):
     """Test signing of work order tokens."""
     key = generate_jwk()
-    work_order_token = WorkOrderToken(
-        type=WorkType.DOWNLOAD,
-        file_id="some-file-id",
-        user_id=uuid4(),
-        user_public_crypt4gh_key="some-public-key",
-        full_user_name="Dr. John Doe",
-        email="john@home.org",
-    )
     token_str = sign_work_order_token(work_order_token=work_order_token, key=key)
     assert isinstance(token_str, str)
     assert len(token_str) > 80

@@ -233,7 +233,7 @@ async def test_create_work_order_token(
     assert isinstance(wot_dict, dict)
     assert wot_dict.pop("exp") - wot_dict.pop("iat") == 30
     assert wot_dict == {
-        "type": "download",
+        "work_type": "download",
         "file_id": "file-id-3",
         "user_id": "a86f8281-e18a-429e-88a9-a5c8ea0cf754",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
@@ -255,7 +255,7 @@ async def test_create_work_order_token(
         headers=headers_for_token(token),
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert "Access has been revoked" in response.json()["detail"]
+    assert "Download access has been revoked" in response.json()["detail"]
 
 
 async def test_get_datasets_unauthenticated(client: AsyncTestClient):

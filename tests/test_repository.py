@@ -30,7 +30,7 @@ from wps.core.models import (
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
-    WorkType,
+    WorkPackageType,
 )
 from wps.core.repository import WorkPackageRepository
 from wps.core.tokens import hash_token
@@ -63,7 +63,7 @@ async def test_work_package_and_token_creation(
 
     creation_data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
-        type=WorkType.DOWNLOAD,
+        type=WorkPackageType.DOWNLOAD,
         file_ids=None,
         user_public_crypt4gh_key=user_public_crypt4gh_key,
     )
@@ -101,7 +101,7 @@ async def test_work_package_and_token_creation(
 
     assert isinstance(package, WorkPackage)
     assert package.dataset_id == "some-dataset-id"
-    assert package.type == WorkType.DOWNLOAD
+    assert package.type == WorkPackageType.DOWNLOAD
     assert package.files == {
         "file-id-1": ".json",
         "file-id-2": ".csv",
@@ -117,27 +117,27 @@ async def test_work_package_and_token_creation(
     # crate work order token
 
     with pytest.raises(repository.WorkPackageAccessError):
-        await repository.work_order_token(
+        await repository.get_download_wot(
             work_package_id=uuid4(),
             file_id="file-id-1",
             work_package_access_token=wpat,
         )
 
     with pytest.raises(repository.WorkPackageAccessError):
-        await repository.work_order_token(
+        await repository.get_download_wot(
             work_package_id=work_package_id,
             file_id="invalid-file-id",
             work_package_access_token=wpat,
         )
 
     with pytest.raises(repository.WorkPackageAccessError):
-        await repository.work_order_token(
+        await repository.get_download_wot(
             work_package_id=work_package_id,
             file_id="file-id-1",
             work_package_access_token="invalid-token",
         )
 
-    wot = await repository.work_order_token(
+    wot = await repository.get_download_wot(
         work_package_id=work_package_id,
         file_id="file-id-3",
         work_package_access_token=wpat,
@@ -150,7 +150,7 @@ async def test_work_package_and_token_creation(
     wot_claims = decode_and_validate_token(wot, SIGNING_KEY_PAIR.public())
     assert wot_claims.pop("exp") - wot_claims.pop("iat") == valid_days
     assert wot_claims == {
-        "type": package.type.value,
+        "work_type": package.type.value,
         "file_id": "file-id-3",
         "user_id": str(package.user_id),
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
@@ -162,7 +162,7 @@ async def test_work_package_and_token_creation(
 
     creation_data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
-        type=WorkType.DOWNLOAD,
+        type=WorkPackageType.DOWNLOAD,
         file_ids=["file-id-1", "file-id-3", "non-existing-file"],
         user_public_crypt4gh_key=user_public_crypt4gh_key,
     )
@@ -177,22 +177,21 @@ async def test_work_package_and_token_creation(
     wpat = decrypt(encrypted_wpat)
 
     # crate work order token
-
     with pytest.raises(repository.WorkPackageAccessError):
-        await repository.work_order_token(
+        await repository.get_download_wot(
             work_package_id=work_package_id,
             file_id="non-existing-file",
             work_package_access_token=wpat,
         )
 
     with pytest.raises(repository.WorkPackageAccessError):
-        await repository.work_order_token(
+        await repository.get_download_wot(
             work_package_id=work_package_id,
             file_id="file-id-2",
             work_package_access_token=wpat,
         )
 
-    wot = await repository.work_order_token(
+    wot = await repository.get_download_wot(
         work_package_id=work_package_id,
         file_id="file-id-1",
         work_package_access_token=wpat,
@@ -205,7 +204,7 @@ async def test_work_package_and_token_creation(
     wot_claims = decode_and_validate_token(wot, SIGNING_KEY_PAIR.public())
     assert wot_claims.pop("exp") - wot_claims.pop("iat") == valid_days
     assert wot_claims == {
-        "type": package.type.value,
+        "work_type": package.type.value,
         "file_id": "file-id-1",
         "user_id": str(package.user_id),
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
@@ -226,7 +225,7 @@ async def test_work_package_and_token_creation(
     try:
         access.check_download_access = check_download_access_patched  # type: ignore
         with pytest.raises(repository.WorkPackageAccessError):
-            await repository.work_order_token(
+            await repository.get_download_wot(
                 work_package_id=work_package_id,
                 file_id="file-id-1",
                 work_package_access_token=wpat,

@@ -30,7 +30,11 @@ from ghga_service_commons.utils.utc_dates import now_as_utc
 from hexkit.providers.akafka.testutils import KafkaFixture
 from hexkit.providers.mongodb.testutils import MongoDbFixture
 
-from wps.adapters.outbound.dao import get_dataset_dao, get_work_package_dao
+from wps.adapters.outbound.dao import (
+    get_dataset_dao,
+    get_upload_box_dao,
+    get_work_package_dao,
+)
 from wps.config import Config
 from wps.core.repository import WorkPackageRepository
 from wps.prepare import Consumer, prepare_rest_app
@@ -97,7 +101,7 @@ def fixture_config(kafka: KafkaFixture, mongodb: MongoDbFixture) -> Config:
     """Fixture for creating a test configuration."""
     return Config(
         auth_key=AUTH_KEY_PAIR.export_public(),  # pyright: ignore
-        download_access_url="http://access",
+        access_url="http://access",
         work_package_signing_key=SIGNING_KEY_PAIR.export_private(),  # pyright: ignore
         **kafka.config.model_dump(exclude={"kafka_enable_dlq"}),
         **mongodb.config.model_dump(),
@@ -113,11 +117,13 @@ async def fixture_repository(
     work_package_dao = await get_work_package_dao(
         config=config, dao_factory=dao_factory
     )
+    upload_box_dao = await get_upload_box_dao(config=config, dao_factory=dao_factory)
     dataset_dao = await get_dataset_dao(config=config, dao_factory=dao_factory)
     return WorkPackageRepository(
         config=config,
         access_check=AccessCheckMock(),
         dataset_dao=dataset_dao,
+        upload_box_dao=upload_box_dao,
         work_package_dao=work_package_dao,
     )
 

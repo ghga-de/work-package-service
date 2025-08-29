@@ -23,10 +23,11 @@ import pytest
 from pydantic import ValidationError
 
 from wps.core.models import (
-    WorkOrderToken,
+    DownloadWorkOrder,
     WorkPackage,
     WorkPackageCreationData,
-    WorkType,
+    WorkPackageType,
+    WOTWorkType,
 )
 
 from .fixtures.crypt import user_public_crypt4gh_key
@@ -34,8 +35,8 @@ from .fixtures.crypt import user_public_crypt4gh_key
 
 def test_work_order_token():
     """Test instantiating a work order token model."""
-    token = WorkOrderToken(
-        type=WorkType.DOWNLOAD,
+    token = DownloadWorkOrder(
+        work_type=WOTWorkType.DOWNLOAD,
         file_id="some-file-id",
         user_id=uuid4(),
         user_public_crypt4gh_key="some-public-key",
@@ -49,12 +50,12 @@ def test_good_creation_data():
     """Test instantiating valid work package creation DTO."""
     data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
-        type=WorkType.DOWNLOAD,
+        type=WorkPackageType.DOWNLOAD,
         file_ids=["some-file-id", "another-file-id"],
         user_public_crypt4gh_key=user_public_crypt4gh_key,
     )
     assert data.dataset_id == "some-dataset-id"
-    assert data.type == WorkType.DOWNLOAD
+    assert data.type == WorkPackageType.DOWNLOAD
     assert data.file_ids == ["some-file-id", "another-file-id"]
     assert data.user_public_crypt4gh_key == user_public_crypt4gh_key
 
@@ -65,12 +66,12 @@ def test_good_creation_data():
     )
     data = WorkPackageCreationData(
         dataset_id="123-foo-456",
-        type=WorkType.UPLOAD,
+        type=WorkPackageType.UPLOAD,
         file_ids=None,
         user_public_crypt4gh_key=wrapped_key,
     )
     assert data.dataset_id == "123-foo-456"
-    assert data.type == WorkType.UPLOAD
+    assert data.type == WorkPackageType.UPLOAD
     assert data.file_ids is None
     assert data.user_public_crypt4gh_key == user_public_crypt4gh_key
 
@@ -80,7 +81,7 @@ def test_bad_creation_data():
     with pytest.raises(ValidationError, match="dataset_id"):
         WorkPackageCreationData(
             dataset_id=["foo", "bar"],  # type: ignore
-            type=WorkType.DOWNLOAD,
+            type=WorkPackageType.DOWNLOAD,
             file_ids=["some-file-id", "another-file-id"],
             user_public_crypt4gh_key=user_public_crypt4gh_key,
         )
@@ -94,14 +95,14 @@ def test_bad_creation_data():
     with pytest.raises(ValidationError, match="file_ids"):
         WorkPackageCreationData(
             dataset_id="some-dataset-id",
-            type=WorkType.DOWNLOAD,
+            type=WorkPackageType.DOWNLOAD,
             file_ids="some-file-id",  # type: ignore
             user_public_crypt4gh_key=user_public_crypt4gh_key,
         )
     with pytest.raises(ValidationError, match="user_public_crypt4gh_key"):
         WorkPackageCreationData(
             dataset_id="some-dataset-id",
-            type=WorkType.DOWNLOAD,
+            type=WorkPackageType.DOWNLOAD,
             file_ids=["some-file-id", "another-file-id"],
             user_public_crypt4gh_key="foo",
         )
@@ -116,7 +117,7 @@ def test_work_package():
         id=TEST_ID,
         user_id=uuid4(),
         dataset_id="some-dataset-id",
-        type=WorkType.DOWNLOAD,
+        type=WorkPackageType.DOWNLOAD,
         files={"some-file-id": ".sam", "another-file-id": ".bam"},
         user_public_crypt4gh_key=user_public_crypt4gh_key,
         full_user_name="Dr. John Doe",
