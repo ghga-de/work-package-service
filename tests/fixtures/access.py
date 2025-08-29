@@ -21,6 +21,7 @@ from uuid import UUID
 
 from ghga_service_commons.utils.utc_dates import UTCDatetime
 from hexkit.utils import now_utc_ms_prec
+from pydantic import UUID4
 
 from wps.ports.outbound.access import AccessCheckPort
 
@@ -77,9 +78,9 @@ class AccessCheckMock(AccessCheckPort):
 
     async def get_accessible_boxes_with_expiration(
         self, user_id: UUID
-    ) -> dict[str, UTCDatetime]:
+    ) -> dict[UUID4, UTCDatetime]:
         """Get all upload boxes that the given user is allowed to upload to."""
         if user_id not in USERS_WITH_UPLOAD_ACCESS:
             return {}
         expires = now_utc_ms_prec() + self.validity_period
-        return {str(box_id): expires for box_id in BOXES_WITH_UPLOAD_ACCESS}
+        return {box_id: expires for box_id in BOXES_WITH_UPLOAD_ACCESS}

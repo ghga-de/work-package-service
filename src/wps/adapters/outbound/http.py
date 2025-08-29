@@ -23,7 +23,7 @@ from uuid import UUID
 
 import httpx
 from ghga_service_commons.utils.utc_dates import UTCDatetime
-from pydantic import Field
+from pydantic import UUID4, Field
 from pydantic_settings import BaseSettings
 
 from wps.constants import TRACER
@@ -130,7 +130,7 @@ class AccessCheckAdapter(AccessCheckPort):
     )
     async def get_accessible_boxes_with_expiration(
         self, user_id: UUID
-    ) -> dict[str, UTCDatetime]:
+    ) -> dict[UUID4, UTCDatetime]:
         """Get all upload boxes that the given user is allowed to upload to.
 
         This method returns a mapping from box IDs to access expiration dates.
@@ -141,7 +141,7 @@ class AccessCheckAdapter(AccessCheckPort):
             box_ids = response.json()
             try:
                 return {
-                    box_id: datetime.fromisoformat(valid_until)
+                    UUID(box_id): datetime.fromisoformat(valid_until)
                     for box_id, valid_until in box_ids.items()
                 }
             except (ValueError, TypeError) as error:
