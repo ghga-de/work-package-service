@@ -478,7 +478,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 )
                 log.error(access_error, extra=extra)
                 raise access_error
-            wot = CreateFileWorkOrder(
+            create_file_wot = CreateFileWorkOrder(
                 work_type=work_type,
                 alias=alias,
                 box_id=box_id,
@@ -487,6 +487,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 email=work_package.email,
                 user_public_crypt4gh_key=user_public_crypt4gh_key,
             )
+            signed_wot = sign_work_order_token(create_file_wot, self._signing_key)
         elif work_type in [WOTWorkType.UPLOAD, WOTWorkType.CLOSE, WOTWorkType.DELETE]:
             if not file_id:
                 access_error = self.WorkPackageAccessError(
@@ -494,7 +495,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 )
                 log.error(access_error, extra=extra)
                 raise access_error
-            wot = UploadFileWorkOrder(
+            upload_file_wot = UploadFileWorkOrder(
                 work_type=work_type,
                 box_id=box_id,
                 file_id=file_id,
@@ -503,119 +504,13 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 email=work_package.email,
                 user_public_crypt4gh_key=user_public_crypt4gh_key,
             )
+            signed_wot = sign_work_order_token(upload_file_wot, self._signing_key)
         else:
             access_error = self.WorkPackageAccessError(
                 f"Unsupported Work Order Token type: {work_type.value}"
             )
             log.error(access_error, extra=extra)
             raise access_error
-
-        signed_wot = sign_work_order_token(wot, self._signing_key)
-        return encrypt(signed_wot, user_public_crypt4gh_key)
-
-    async def work_order_token_flexible(  # noqa: PLR0913
-        self,
-        work_package_id: UUID,
-        work_type: str,
-        *,
-        alias: str | None = None,
-        file_id: str | None = None,
-        check_valid: bool = True,
-        work_package_access_token: str | None = None,
-    ) -> str:
-        """Create a flexible work order token for various upload operations.
-
-        In the following cases, a WorkPackageAccessError is raised:
-        - if a work package with the given work_package_id does not exist
-        - if check_valid is set and the work package has expired
-        - if a work_package_access_token is specified and it does not match
-          the token hash that is stored in the work package
-        - if the work_type requires parameters that are not provided
-        """
-        extra = {  # only used for logging
-            "work_package_id": work_package_id,
-            "work_type": work_type,
-            "check_valid": check_valid,
-        }
-
-        work_package = await self.get(
-            work_package_id,
-            check_valid=check_valid,
-            work_package_access_token=work_package_access_token,
-        )
-
-        # Only support upload work packages for now
-        if work_package.type != WorkPackageType.UPLOAD:
-            access_error = self.WorkPackageAccessError(
-                "Flexible work order tokens only supported for upload work packages"
-            )
-            log.error(access_error, extra=extra)
-            raise access_error
-
-        if not work_package.box_id:
-            access_error = self.WorkPackageAccessError(
-                "Upload work package missing box_id"
-            )
-            log.error(access_error, extra=extra)
-            raise access_error
-
-        # Create the appropriate WOT based on work_type
-        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
-
-        if work_type == WOTWorkType.CREATE.value:
-            if not alias:
-                access_error = self.WorkPackageAccessError(
-                    "Alias is required for CREATE work type"
-                )
-                log.error(access_error, extra=extra)
-                raise access_error
-
-            wot = CreateFileWorkOrder(
-                work_type=WOTWorkType.CREATE,
-                alias=alias,
-                box_id=work_package.box_id,
-                user_id=work_package.user_id,
-                full_user_name=work_package.full_user_name,
-                email=work_package.email,
-                user_public_crypt4gh_key=user_public_crypt4gh_key,
-            )
-        elif work_type in [
-            WOTWorkType.UPLOAD.value,
-            WOTWorkType.CLOSE.value,
-            WOTWorkType.DELETE.value,
-        ]:
-            if not file_id:
-                access_error = self.WorkPackageAccessError(
-                    f"File ID is required for {work_type} work type"
-                )
-                log.error(access_error, extra=extra)
-                raise access_error
-
-            try:
-                file_uuid = UUID(file_id)
-            except ValueError as error:
-                access_error = self.WorkPackageAccessError("Invalid file ID format")
-                log.error(access_error, extra=extra)
-                raise access_error from error
-
-            wot = UploadFileWorkOrder(
-                work_type=WOTWorkType(work_type),
-                file_id=file_uuid,
-                box_id=work_package.box_id,
-                user_id=work_package.user_id,
-                full_user_name=work_package.full_user_name,
-                email=work_package.email,
-                user_public_crypt4gh_key=user_public_crypt4gh_key,
-            )
-        else:
-            access_error = self.WorkPackageAccessError(
-                f"Unsupported work type: {work_type}"
-            )
-            log.error(access_error, extra=extra)
-            raise access_error
-
-        # Sign and encrypt the token
-        signed_wot = sign_work_order_token(wot, self._signing_key)
         return encrypt(signed_wot, user_public_crypt4gh_key)
 
     async def register_dataset(self, dataset: Dataset) -> None:
