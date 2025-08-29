@@ -16,6 +16,7 @@
 
 """Test the Work Package Repository."""
 
+from datetime import timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -34,7 +35,7 @@ from wps.core.models import (
     WorkPackageType,
 )
 from wps.core.repository import WorkPackageRepository
-from wps.core.tokens import hash_token
+from wps.core.tokens import generate_work_package_access_token, hash_token
 
 from .fixtures import (  # noqa: F401
     SIGNING_KEY_PAIR,
@@ -277,3 +278,52 @@ async def test_deletion_of_datasets(
 
     with pytest.raises(repository.DatasetNotFoundError):
         await repository.delete_dataset(DATASET.id)
+
+
+async def test_retrieve_work_package_without_box_id(
+    repository: WorkPackageRepository, mongodb: MongoDbFixture
+):
+    """Test retrieving an existing WorkPackage document from the database and
+    using that to create a WorkPackage pydantic model instance, ensuring that no errors
+    are raised when `box_id` is no included as a kwarg.
+    """
+    # Create an old-style work package document directly in the database (without box_id)
+    old_work_package_id = uuid4()
+    user_id = uuid4()
+    created_time = now_utc_ms_prec()
+    expires_time = created_time + timedelta(days=30)
+    token = generate_work_package_access_token()
+
+    # This document represents an old work package as it would exist before the upload feature
+    old_document = {
+        "_id": old_work_package_id,
+        "dataset_id": "some-old-dataset-id",
+        "type": "download",
+        "files": {"file-1": ".json", "file-2": ".csv"},
+        "user_id": user_id,
+        "full_user_name": "Dr. Legacy User",
+        "email": "legacy@example.com",
+        "user_public_crypt4gh_key": "some-legacy-key",
+        "token_hash": hash_token(token),
+        "created": created_time,
+        "expires": expires_time,
+    }
+
+    # Insert the old document directly into MongoDB using the mongodb fixture
+    # Access the collection through the mongodb fixture
+    db = mongodb.client[mongodb.config.db_name]
+    collection = db["workPackages"]
+    collection.insert_one(old_document)
+
+    # Now retrieve the work package through the repository
+    # This should work without errors even though box_id is missing
+    retrieved_package = await repository.get(
+        work_package_id=old_work_package_id,
+        check_valid=False,  # don't need to check access, just see if the retrieval works
+        work_package_access_token=token,
+    )
+
+    # Verify basic details to see if the work package was retrieved correctly
+    assert retrieved_package.id == old_work_package_id
+    assert retrieved_package.dataset_id == "some-old-dataset-id"
+    assert retrieved_package.box_id is None  # Should be None for old documents
