@@ -24,7 +24,12 @@ from ghga_service_commons.utils.utc_dates import UTCDatetime, now_as_utc
 from wps.ports.outbound.access import AccessCheckPort
 
 USERS_WITH_DOWNLOAD_ACCESS = [UUID("a86f8281-e18a-429e-88a9-a5c8ea0cf754")]
+USERS_WITH_UPLOAD_ACCESS = [UUID("4624fb56-2d5f-4a8a-9a6c-cc0226a4f55a")]
 DATASETS_WITH_DOWNLOAD_ACCESS = ["some-dataset-id"]
+BOXES_WITH_UPLOAD_ACCESS = [
+    UUID("e47f4b8a-3f2c-4e8b-9a1c-7d4e5f6a7b8c"),
+    UUID("f58e5c9b-4e3d-5f9c-ab2d-8e5f6a7b8c9d"),
+]
 
 __all__ = ["AccessCheckMock"]
 
@@ -57,3 +62,23 @@ class AccessCheckMock(AccessCheckPort):
             for dataset_id in DATASETS_WITH_DOWNLOAD_ACCESS
             if dataset_id in DATASETS_WITH_DOWNLOAD_ACCESS
         }
+
+    async def check_upload_access(
+        self, user_id: UUID, box_id: UUID
+    ) -> UTCDatetime | None:
+        """Check whether the given user has upload access for the given box."""
+        if (
+            user_id not in USERS_WITH_UPLOAD_ACCESS
+            or box_id not in BOXES_WITH_UPLOAD_ACCESS
+        ):
+            return None
+        return now_as_utc() + self.validity_period
+
+    async def get_accessible_boxes_with_expiration(
+        self, user_id: UUID
+    ) -> dict[str, UTCDatetime]:
+        """Get all upload boxes that the given user is allowed to upload to."""
+        if user_id not in USERS_WITH_UPLOAD_ACCESS:
+            return {}
+        expires = now_as_utc() + self.validity_period
+        return {str(box_id): expires for box_id in BOXES_WITH_UPLOAD_ACCESS}
