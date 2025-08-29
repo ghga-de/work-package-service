@@ -22,7 +22,8 @@ from uuid import UUID
 
 from ghga_service_commons.auth.ghga import AuthContext
 from ghga_service_commons.utils.crypt import encrypt
-from ghga_service_commons.utils.utc_dates import UTCDatetime, now_as_utc
+from ghga_service_commons.utils.utc_dates import UTCDatetime
+from hexkit.utils import now_utc_ms_prec
 from jwcrypto import jwk
 from pydantic import UUID4, Field, SecretStr
 from pydantic_settings import BaseSettings
@@ -258,7 +259,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         if auth_context.title:
             full_user_name = auth_context.title + " " + full_user_name
 
-        created = now_as_utc()
+        created = now_utc_ms_prec()
         expires = min(created + self._valid_timedelta, expires)
 
         token = generate_work_package_access_token()
@@ -293,7 +294,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         - the work package is for upload and the box ID is missing
         """
         extra = {"work_package_id": work_package.id}  # only used for logging
-        if not work_package.created <= now_as_utc() <= work_package.expires:
+        if not work_package.created <= now_utc_ms_prec() <= work_package.expires:
             access_error = self.WorkPackageAccessError("Work package has expired")
             log.error(access_error, extra=extra)
             raise access_error

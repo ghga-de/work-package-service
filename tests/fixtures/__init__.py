@@ -26,9 +26,9 @@ from ghga_service_commons.utils.jwt_helpers import (
     generate_jwk,
     sign_and_serialize_token,
 )
-from ghga_service_commons.utils.utc_dates import now_as_utc
 from hexkit.providers.akafka.testutils import KafkaFixture
 from hexkit.providers.mongodb.testutils import MongoDbFixture
+from hexkit.utils import now_utc_ms_prec
 
 from wps.adapters.outbound.dao import (
     get_dataset_dao,
@@ -92,7 +92,9 @@ def fixture_bad_auth_headers() -> dict[str, str]:
 @pytest.fixture(name="auth_context")
 def fixture_auth_context() -> AuthContext:
     """Fixture for getting an auth context"""
-    iat = now_as_utc() - timedelta(1)  # validity is actually assumed by the repository
+    iat = now_utc_ms_prec() - timedelta(
+        1
+    )  # validity is actually assumed by the repository
     return AuthContext(**AUTH_CLAIMS, iat=iat, exp=iat)  # type: ignore
 
 

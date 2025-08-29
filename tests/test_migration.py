@@ -21,8 +21,8 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
-from ghga_service_commons.utils.utc_dates import now_as_utc
 from hexkit.providers.mongodb.testutils import MongoDbFixture
+from hexkit.utils import now_utc_ms_prec
 
 from tests.fixtures import fixture_config  # noqa: F401
 from wps.core.models import WorkPackage, WorkPackageType
@@ -41,8 +41,8 @@ async def test_migration_v2(config, mongodb: MongoDbFixture):
         old_work_package = WorkPackage(
             type=WorkPackageType.DOWNLOAD,
             files={},
-            created=now_as_utc(),
-            expires=now_as_utc(),
+            created=now_utc_ms_prec(),
+            expires=now_utc_ms_prec(),
             id=uuid4(),
             dataset_id=f"GHGADataset{i}",
             user_id=uuid4(),

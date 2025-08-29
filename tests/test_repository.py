@@ -21,8 +21,9 @@ from uuid import UUID, uuid4
 import pytest
 from ghga_service_commons.auth.ghga import AuthContext
 from ghga_service_commons.utils.jwt_helpers import decode_and_validate_token
-from ghga_service_commons.utils.utc_dates import UTCDatetime, now_as_utc
+from ghga_service_commons.utils.utc_dates import UTCDatetime
 from hexkit.providers.mongodb.testutils import MongoDbFixture
+from hexkit.utils import now_utc_ms_prec
 
 from wps.config import Config
 from wps.core.models import (
@@ -76,7 +77,8 @@ async def test_work_package_and_token_creation(
 
     expires = creation_response.expires
     assert (
-        round((expires - now_as_utc()).total_seconds() / (24 * 60 * 60)) == valid_days
+        round((expires - now_utc_ms_prec()).total_seconds() / (24 * 60 * 60))
+        == valid_days
     )
 
     work_package_id = UUID(creation_response.id)
@@ -255,7 +257,7 @@ async def test_checking_accessible_datasets(
     dataset_with_expiration = datasets_with_expiration[0]
 
     expires = dataset_with_expiration.expires
-    assert round((expires - now_as_utc()).total_seconds() / (24 * 60 * 60)) == 365
+    assert round((expires - now_utc_ms_prec()).total_seconds() / (24 * 60 * 60)) == 365
 
     dataset = Dataset(**dataset_with_expiration.model_dump(exclude={"expires"}))
     assert dataset == DATASET

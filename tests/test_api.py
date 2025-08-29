@@ -23,8 +23,8 @@ import pytest
 from fastapi import status
 from ghga_service_commons.api.testing import AsyncTestClient
 from ghga_service_commons.utils.jwt_helpers import decode_and_validate_token
-from ghga_service_commons.utils.utc_dates import now_as_utc
 from hexkit.providers.mongodb.testutils import MongoDbFixture
+from hexkit.utils import now_utc_ms_prec
 from pytest_httpx import HTTPXMock
 
 from wps.config import Config
@@ -94,7 +94,7 @@ async def test_create_work_order_token(
     """Test that work order tokens can be properly created."""
     # mock the access check for the test dataset to grant access
 
-    valid_until = (now_as_utc() + timedelta(days=365)).isoformat()
+    valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
         url="http://access/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets/some-dataset-id",
@@ -112,7 +112,9 @@ async def test_create_work_order_token(
     assert isinstance(response_data, dict)
     assert sorted(response_data) == ["expires", "id", "token"]
 
-    valid_timedelta = datetime.fromisoformat(response_data["expires"]) - now_as_utc()
+    valid_timedelta = (
+        datetime.fromisoformat(response_data["expires"]) - now_utc_ms_prec()
+    )
     valid_days = round((valid_timedelta).total_seconds() / (24 * 60 * 60))
 
     assert valid_days == config.work_package_valid_days
@@ -283,7 +285,7 @@ async def test_get_datasets_when_none_authorized(
     """Test that no datasets are fetched when none are accessible."""
     # mock the access check for the test dataset
 
-    expires = (now_as_utc() + timedelta(days=365)).isoformat()
+    expires = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
         url="http://access/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets",
@@ -311,7 +313,7 @@ async def test_get_datasets(
     """Test that the list of accessible datasets can be fetched."""
     # mock the access check for the test dataset
 
-    expires = (now_as_utc() + timedelta(days=365)).isoformat()
+    expires = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
         url="http://access/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets",
