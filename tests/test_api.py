@@ -46,8 +46,9 @@ from .fixtures.datasets import DATASET
 
 pytestmark = pytest.mark.asyncio()
 
-
-CREATION_DATA = {
+DOWNLOAD_URL = "http://access/download-access"
+UPLOAD_URL = "http://access/upload-access"
+DATASET_CREATION_DATA = {
     "dataset_id": "some-dataset-id",
     "type": "download",
     "file_ids": ["file-id-1", "file-id-3", "file-id-5"],
@@ -69,10 +70,10 @@ async def test_create_work_package_unauthorized(
     client: AsyncTestClient, bad_auth_headers: dict[str, str]
 ):
     """Test that creating a work package needs authorization."""
-    response = await client.post("/work-packages", json=CREATION_DATA)
+    response = await client.post("/work-packages", json=DATASET_CREATION_DATA)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     response = await client.post(
-        "/work-packages", json=CREATION_DATA, headers=bad_auth_headers
+        "/work-packages", json=DATASET_CREATION_DATA, headers=bad_auth_headers
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -93,18 +94,14 @@ async def test_create_download_work_order_token(
 ):
     """Test that download-type work order tokens can be properly created."""
     # mock the access check for the test dataset to grant access
-
+    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
+    url = f"{DOWNLOAD_URL}/users/{user_id}/datasets/some-dataset-id"
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
-    httpx_mock.add_response(
-        method="GET",
-        url="http://access/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets/some-dataset-id",
-        json=valid_until,
-    )
+    httpx_mock.add_response(method="GET", url=url, json=valid_until)
 
     # create a work package
-
     response = await client.post(
-        "/work-packages", json=CREATION_DATA, headers=auth_headers
+        "/work-packages", json=DATASET_CREATION_DATA, headers=auth_headers
     )
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -131,12 +128,10 @@ async def test_create_download_work_order_token(
     assert token.isalnum() and len(token) == 24
 
     # try to get the work package without authorization
-
     response = await client.get(f"/work-packages/{work_package_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     # try to get a non-existing work package with authorization and malformed ID
-
     response = await client.get(
         "/work-packages/some-work-package-id", headers=headers_for_token(token)
     )
@@ -149,7 +144,6 @@ async def test_create_download_work_order_token(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     # get the proper work package with authorization
-
     response = await client.get(
         f"/work-packages/{work_package_id}", headers=headers_for_token(token)
     )
@@ -171,14 +165,12 @@ async def test_create_download_work_order_token(
     }
 
     # try to get a work order token without authorization
-
     response = await client.post(
         f"/work-packages/{work_package_id}/files/file-id-1/work-order-tokens"
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     # try to get a work order token for a non-existing work package with authorization
-
     response = await client.post(
         f"/work-packages/{uuid4()}/files/file-id-1/work-order-tokens",
         headers=headers_for_token(token),
@@ -186,7 +178,6 @@ async def test_create_download_work_order_token(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     # try to get a work order token for a non-requested file with authorization
-
     response = await client.post(
         f"/work-packages/{work_package_id}/files/file-id-2/work-order-tokens",
         headers=headers_for_token(token),
@@ -194,7 +185,6 @@ async def test_create_download_work_order_token(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     # try to get a work order token for a non-existing file with authorization
-
     response = await client.post(
         f"/work-packages/{work_package_id}/files/file-id-5/work-order-tokens",
         headers=headers_for_token(token),
@@ -202,7 +192,6 @@ async def test_create_download_work_order_token(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     # get a work order token for an existing file with authorization
-
     response = await client.post(
         f"/work-packages/{work_package_id}/files/file-id-3/work-order-tokens",
         headers=headers_for_token(token),
@@ -216,12 +205,10 @@ async def test_create_download_work_order_token(
     assert isinstance(wot, str)
 
     # decrypt the work order token
-
     assert wot and isinstance(wot, str) and wot.isascii()
     wot = decrypt(wot)
 
     # validate the work order token
-
     assert isinstance(wot, str)
     assert len(wot) > 80
     assert wot.count(".") == 2
@@ -231,13 +218,12 @@ async def test_create_download_work_order_token(
     wot_dict = decode_and_validate_token(wot, SIGNING_KEY_PAIR.public())
 
     # check the content of the work order token
-
     assert isinstance(wot_dict, dict)
     assert wot_dict.pop("exp") - wot_dict.pop("iat") == 30
     assert wot_dict == {
         "work_type": "download",
         "file_id": "file-id-3",
-        "user_id": "a86f8281-e18a-429e-88a9-a5c8ea0cf754",
+        "user_id": user_id,
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
         "full_user_name": "Dr. John Doe",
         "email": "john@home.org",
@@ -246,12 +232,11 @@ async def test_create_download_work_order_token(
     # mock the access check for the test dataset to revoke access
     httpx_mock.add_response(
         method="GET",
-        url="http://access/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets/some-dataset-id",
+        url=f"{DOWNLOAD_URL}/users/{user_id}/datasets/some-dataset-id",
         text="false",
     )
 
     # try to fetch a work order token again
-
     response = await client.post(
         f"/work-packages/{work_package_id}/files/file-id-3/work-order-tokens",
         headers=headers_for_token(token),
@@ -276,7 +261,7 @@ async def test_create_upload_work_order_token(
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"http://access/upload-access/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_URL}/users/{user_id}/boxes/{box_id}",
         json=valid_until,
     )
 
@@ -413,21 +398,18 @@ async def test_get_datasets_when_none_authorized(
 ):
     """Test that no datasets are fetched when none are accessible."""
     # mock the access check for the test dataset
-
+    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
     expires = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url="http://access/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets",
+        url=f"{DOWNLOAD_URL}/users/{user_id}/datasets",
         json={"some-other-dataset-id": expires},
     )
 
     # get the list of datasets
 
-    response = await client.get(
-        "/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets", headers=auth_headers
-    )
+    response = await client.get(f"/users/{user_id}/datasets", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
-
     response_data = response.json()
     assert isinstance(response_data, list)
     assert response_data == []
@@ -451,7 +433,7 @@ async def test_get_upload_wot_expired_access(
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"http://access/upload-access/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_URL}/users/{user_id}/boxes/{box_id}",
         json=valid_until,
     )
 
@@ -484,7 +466,7 @@ async def test_get_upload_wot_expired_access(
     # Mock expired access check - return null to indicate no access
     httpx_mock.add_response(
         method="GET",
-        url=f"http://access/upload-access/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_URL}/users/{user_id}/boxes/{box_id}",
         text="null",
     )
 
@@ -509,10 +491,11 @@ async def test_get_datasets(
     """Test that the list of accessible datasets can be fetched."""
     # mock the access check for the test dataset
 
+    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
     expires = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url="http://access/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets",
+        url=f"{DOWNLOAD_URL}/users/{user_id}/datasets",
         json={
             "some-dataset-id": expires,
             "some-non-existing-dataset-id": expires,
@@ -520,10 +503,7 @@ async def test_get_datasets(
     )
 
     # get the list of datasets
-
-    response = await client.get(
-        "/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets", headers=auth_headers
-    )
+    response = await client.get(f"/users/{user_id}/datasets", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
@@ -548,7 +528,7 @@ async def test_get_upload_boxes(
     expires = (now_utc_ms_prec() + timedelta(days=180)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"http://access/upload-access/users/{user_id}/boxes",
+        url=f"{UPLOAD_URL}/users/{user_id}/boxes",
         json={
             box_id1: expires,
             box_id2: expires,

@@ -52,7 +52,8 @@ class AccessCheckAdapter(AccessCheckPort):
 
     def __init__(self, *, config: AccessCheckConfig, client: httpx.AsyncClient):
         """Configure the access grant adapter."""
-        self._url = config.access_url
+        self._download_url = f"{config.access_url}/download-access"
+        self._upload_url = f"{config.access_url}/upload-access"
         self._client = client
 
     @classmethod
@@ -69,7 +70,7 @@ class AccessCheckAdapter(AccessCheckPort):
         self, user_id: UUID, dataset_id: str
     ) -> UTCDatetime | None:
         """Check until when the given user has download access for the given dataset."""
-        url = f"{self._url}/users/{user_id}/datasets/{dataset_id}"
+        url = f"{self._download_url}/users/{user_id}/datasets/{dataset_id}"
         response = await self._client.get(url)
         if response.status_code == httpx.codes.OK:
             valid_until = response.json()
@@ -93,7 +94,7 @@ class AccessCheckAdapter(AccessCheckPort):
 
         This method returns a mapping from dataset IDs to access expiration dates.
         """
-        url = f"{self._url}/users/{user_id}/datasets"
+        url = f"{self._download_url}/users/{user_id}/datasets"
         response = await self._client.get(url)
         if response.status_code == httpx.codes.OK:
             dataset_ids = response.json()
@@ -113,7 +114,7 @@ class AccessCheckAdapter(AccessCheckPort):
         self, user_id: UUID, box_id: UUID
     ) -> UTCDatetime | None:
         """Check until when the given user has upload access for the given box."""
-        url = f"{self._url}/upload-access/users/{user_id}/boxes/{box_id}"
+        url = f"{self._upload_url}/users/{user_id}/boxes/{box_id}"
         response = await self._client.get(url)
         status_code = response.status_code
         if status_code == httpx.codes.NOT_FOUND:
@@ -149,7 +150,7 @@ class AccessCheckAdapter(AccessCheckPort):
 
         This method returns a mapping from box IDs to access expiration dates.
         """
-        url = f"{self._url}/upload-access/users/{user_id}/boxes"
+        url = f"{self._upload_url}/users/{user_id}/boxes"
         response = await self._client.get(url)
         status_code = response.status_code
         if status_code == httpx.codes.NOT_FOUND:

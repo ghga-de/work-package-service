@@ -29,7 +29,9 @@ from wps.adapters.outbound.http import AccessCheckAdapter, AccessCheckConfig
 
 pytestmark = pytest.mark.asyncio()
 
-DOWNLOAD_ACCESS_URL = "http://test-access:1234"
+BASE_ACCESS_URL = "http://test-access:1234"
+DOWNLOAD_ACCESS_URL = f"{BASE_ACCESS_URL}/download-access"
+UPLOAD_ACCESS_URL = f"{BASE_ACCESS_URL}/upload-access"
 TEST_USER_ID = UUID("69f1a954-7387-4b70-8bc4-9bf98810d442")
 BOX_ID1 = UUID("62659dd1-51b6-4a87-8614-ca20c873ce38")
 BOX_ID2 = UUID("f4ed5888-765e-4f0c-a012-2c8d27dd6ed8")
@@ -40,7 +42,7 @@ VALID_UNTIL2 = VALID_UNTIL1 + timedelta(days=180)
 @pytest_asyncio.fixture(name="access_check", scope="function")
 async def fixture_access_check() -> AsyncGenerator[AccessCheckAdapter, None]:
     """Get configured access test adapter."""
-    config = AccessCheckConfig(access_url=DOWNLOAD_ACCESS_URL)
+    config = AccessCheckConfig(access_url=BASE_ACCESS_URL)
     async with AccessCheckAdapter.construct(config=config) as adapter:
         yield adapter
 
@@ -107,7 +109,7 @@ async def test_get_accessible_boxes_with_expiration(
     # Test successful response with multiple boxes
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{TEST_USER_ID}/boxes",
+        url=f"{UPLOAD_ACCESS_URL}/users/{TEST_USER_ID}/boxes",
         json={
             str(BOX_ID1): VALID_UNTIL1.isoformat(),
             str(BOX_ID2): VALID_UNTIL2.isoformat(),
@@ -124,7 +126,7 @@ async def test_get_accessible_boxes_with_expiration(
     no_user_id = uuid4()
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{no_user_id}/boxes",
+        url=f"{UPLOAD_ACCESS_URL}/users/{no_user_id}/boxes",
         status_code=404,
     )
     assert await get_boxes(no_user_id) == {}
@@ -132,7 +134,7 @@ async def test_get_accessible_boxes_with_expiration(
     # Test for other status translation
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{no_user_id}/boxes",
+        url=f"{UPLOAD_ACCESS_URL}/users/{no_user_id}/boxes",
         status_code=500,
     )
     with pytest.raises(AccessCheckAdapter.AccessCheckError):
@@ -148,7 +150,7 @@ async def test_get_accessible_boxes_invalid_response_id(
     get_boxes = access_check.get_accessible_boxes_with_expiration
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{TEST_USER_ID}/boxes",
+        url=f"{UPLOAD_ACCESS_URL}/users/{TEST_USER_ID}/boxes",
         json={
             str(BOX_ID1): VALID_UNTIL1.isoformat(),
             "invalid-id": VALID_UNTIL2.isoformat(),
@@ -167,7 +169,7 @@ async def test_get_accessible_boxes_invalid_response_datetime(
     get_boxes = access_check.get_accessible_boxes_with_expiration
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{TEST_USER_ID}/boxes",
+        url=f"{UPLOAD_ACCESS_URL}/users/{TEST_USER_ID}/boxes",
         json={
             str(BOX_ID1): VALID_UNTIL1.isoformat(),
             str(BOX_ID2): "Invalid Datetime",
@@ -186,7 +188,7 @@ async def test_check_upload_access(
     # Test successful access check
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{TEST_USER_ID}/boxes/{BOX_ID1}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{TEST_USER_ID}/boxes/{BOX_ID1}",
         json=VALID_UNTIL1.isoformat(),
     )
     assert await check_access(TEST_USER_ID, BOX_ID1) == VALID_UNTIL1
@@ -195,7 +197,7 @@ async def test_check_upload_access(
     other_box_id = uuid4()
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{TEST_USER_ID}/boxes/{other_box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{TEST_USER_ID}/boxes/{other_box_id}",
         text="null",
     )
     assert await check_access(TEST_USER_ID, other_box_id) is None
@@ -204,7 +206,7 @@ async def test_check_upload_access(
     no_box_id = uuid4()
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{TEST_USER_ID}/boxes/{no_box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{TEST_USER_ID}/boxes/{no_box_id}",
         status_code=404,
     )
     assert await check_access(TEST_USER_ID, no_box_id) is None
@@ -213,7 +215,7 @@ async def test_check_upload_access(
     error_box_id = uuid4()
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{TEST_USER_ID}/boxes/{error_box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{TEST_USER_ID}/boxes/{error_box_id}",
         status_code=500,
     )
     with pytest.raises(AccessCheckAdapter.AccessCheckError):
@@ -222,7 +224,7 @@ async def test_check_upload_access(
     # Test invalid datetime as retrieved value
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/upload-access/users/{TEST_USER_ID}/boxes/{BOX_ID2}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{TEST_USER_ID}/boxes/{BOX_ID2}",
         json="Not a valid date",
     )
     with pytest.raises(AccessCheckAdapter.AccessCheckError):
