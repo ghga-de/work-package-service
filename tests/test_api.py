@@ -84,14 +84,14 @@ async def test_get_work_package_unauthorized(client: AsyncTestClient):
 
 
 @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
-async def test_create_work_order_token(
+async def test_create_download_work_order_token(
     client: AsyncTestClient,
     auth_headers: dict[str, str],
     httpx_mock: HTTPXMock,
     mongodb_populated: MongoDbFixture,
     config: Config,
 ):
-    """Test that work order tokens can be properly created."""
+    """Test that download-type work order tokens can be properly created."""
     # mock the access check for the test dataset to grant access
 
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
@@ -260,6 +260,135 @@ async def test_create_work_order_token(
     assert "Download access has been revoked" in response.json()["detail"]
 
 
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
+async def test_create_upload_work_order_token(
+    client: AsyncTestClient,
+    auth_headers: dict[str, str],
+    httpx_mock: HTTPXMock,
+    mongodb_populated: MongoDbFixture,
+    config: Config,
+):
+    """Test that upload-type work order tokens can be created."""
+    box_id = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
+    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
+
+    # Mock upload access check to grant access
+    valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
+    httpx_mock.add_response(
+        method="GET",
+        url=f"http://access/upload-access/users/{user_id}/boxes/{box_id}",
+        json=valid_until,
+    )
+
+    # Insert an upload box into the database
+    upload_box = {
+        "_id": UUID(box_id),
+        "title": "Test Upload Box",
+        "description": "Box for testing upload functionality",
+    }
+    db = mongodb_populated.client[config.db_name]
+    collection = db[config.upload_boxes_collection]
+    collection.insert_one(upload_box)
+
+    # Create an upload work package
+    upload_creation_data = {
+        "box_id": box_id,
+        "type": "upload",
+        "user_public_crypt4gh_key": user_public_crypt4gh_key,
+    }
+
+    response = await client.post(
+        "/work-packages", json=upload_creation_data, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response_data = response.json()
+    work_package_id = response_data["id"]
+    token = decrypt(response_data["token"])
+
+    # Test CREATE work order token
+    create_request = {"work_type": "create", "alias": "test-file"}
+
+    response = await client.post(
+        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        json=create_request,
+        headers=headers_for_token(token),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    create_wot = response.json()
+    assert isinstance(create_wot, str)
+
+    # Decrypt and validate the CREATE work order token
+    decrypted_wot = decrypt(create_wot)
+    wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
+    assert wot_dict["work_type"] == "create"
+    assert wot_dict["alias"] == "test-file"
+    assert wot_dict["user_id"] == user_id
+    assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
+
+    # Test UPLOAD work order token
+    test_file_id = str(uuid4())
+    upload_request = {"work_type": "upload", "file_id": test_file_id}
+
+    response = await client.post(
+        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        json=upload_request,
+        headers=headers_for_token(token),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    upload_wot = response.json()
+    decrypted_wot = decrypt(upload_wot)
+    wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
+    assert wot_dict["work_type"] == "upload"
+    assert wot_dict["file_id"] == test_file_id
+    assert wot_dict["user_id"] == user_id
+
+    # Test CLOSE work order token
+    close_request = {"work_type": "close", "file_id": test_file_id}
+    response = await client.post(
+        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        json=close_request,
+        headers=headers_for_token(token),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    close_wot = response.json()
+    decrypted_wot = decrypt(close_wot)
+    wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
+    assert wot_dict["work_type"] == "close"
+    assert wot_dict["file_id"] == test_file_id
+    assert wot_dict["user_id"] == user_id
+    assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
+
+    # Test DELETE work order token
+    delete_file_id = str(uuid4())
+    delete_request = {"work_type": "delete", "file_id": delete_file_id}
+
+    response = await client.post(
+        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        json=delete_request,
+        headers=headers_for_token(token),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    delete_wot = response.json()
+    decrypted_wot = decrypt(delete_wot)
+    wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
+    assert wot_dict["work_type"] == "delete"
+    assert wot_dict["file_id"] == delete_file_id
+    assert wot_dict["user_id"] == user_id
+    assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
+
+    # Test unauthorized access (wrong work package)
+    response = await client.post(
+        f"/work-packages/{uuid4()}/boxes/{box_id}/work-order-tokens",
+        json=create_request,
+        headers=headers_for_token(token),
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
 async def test_get_datasets_unauthenticated(client: AsyncTestClient):
     """Test that the list of accessible datasets cannot be fetched unauthenticated."""
     response = await client.get("/users/a86f8281-e18a-429e-88a9-a5c8ea0cf754/datasets")
@@ -302,6 +431,73 @@ async def test_get_datasets_when_none_authorized(
     response_data = response.json()
     assert isinstance(response_data, list)
     assert response_data == []
+
+
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
+async def test_get_upload_wot_expired_access(
+    client: AsyncTestClient,
+    auth_headers: dict[str, str],
+    httpx_mock: HTTPXMock,
+    mongodb_populated: MongoDbFixture,
+    config: Config,
+):
+    """Test that access is rejected when a user tries to get a WOT for an upload box
+    for which they previously had access, but which has since expired.
+    """
+    box_id = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
+    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
+
+    # Mock initial upload access check to grant access
+    valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
+    httpx_mock.add_response(
+        method="GET",
+        url=f"http://access/upload-access/users/{user_id}/boxes/{box_id}",
+        json=valid_until,
+    )
+
+    # Insert an upload box into the database
+    upload_box = {
+        "_id": UUID(box_id),
+        "title": "Test Upload Box",
+        "description": "Box for testing expired access",
+    }
+    db = mongodb_populated.client[config.db_name]
+    collection = db[config.upload_boxes_collection]
+    collection.insert_one(upload_box)
+
+    # Create an upload work package
+    upload_creation_data = {
+        "box_id": box_id,
+        "type": "upload",
+        "user_public_crypt4gh_key": user_public_crypt4gh_key,
+    }
+
+    response = await client.post(
+        "/work-packages", json=upload_creation_data, headers=auth_headers
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response_data = response.json()
+    work_package_id = response_data["id"]
+    token = decrypt(response_data["token"])
+
+    # Mock expired access check - return null to indicate no access
+    httpx_mock.add_response(
+        method="GET",
+        url=f"http://access/upload-access/users/{user_id}/boxes/{box_id}",
+        text="null",
+    )
+
+    # Try to create a work order token - should fail due to expired box access
+    create_request = {"work_type": "create", "alias": "test-file"}
+
+    response = await client.post(
+        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        json=create_request,
+        headers=headers_for_token(token),
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "Upload access has been revoked" in response.json()["detail"]
 
 
 async def test_get_datasets(
