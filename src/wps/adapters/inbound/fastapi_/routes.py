@@ -232,13 +232,13 @@ async def create_upload_work_order_token(
 )
 @TRACER.start_as_current_span("routes.get_datasets")
 async def get_datasets(
-    user_id: str,
+    user_id: UUID4,
     repository: WorkPackageRepositoryDummy,
     auth_context: UserAuthContext,
 ) -> list[DatasetWithExpiration]:
     """Get datasets using an internal auth token with a user context."""
     try:
-        if user_id != auth_context.id:
+        if str(user_id) != auth_context.id:
             raise repository.WorkPackageAccessError("Not authorized to get datasets")
         datasets = await repository.get_datasets(auth_context=auth_context)
     except repository.WorkPackageAccessError as error:

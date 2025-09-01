@@ -280,6 +280,7 @@ paths:
         name: user_id
         required: true
         schema:
+          format: uuid4
           title: User Id
           type: string
       responses:
@@ -311,6 +312,7 @@ paths:
         name: user_id
         required: true
         schema:
+          format: uuid4
           title: User Id
           type: string
       responses:
