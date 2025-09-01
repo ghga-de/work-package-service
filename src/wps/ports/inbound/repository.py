@@ -155,5 +155,5 @@ class WorkPackageRepositoryPort(ABC):
         """
 
     @abstractmethod
-    async def get_upload_boxes(self, *, auth_context: AuthContext) -> list[UploadBox]:
+    async def get_upload_boxes(self, *, user_id: UUID4) -> list[UploadBox]:
         """Get the list of all upload boxes accessible to the authenticated user."""

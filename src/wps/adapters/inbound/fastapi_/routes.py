@@ -265,17 +265,17 @@ async def get_datasets(
 )
 @TRACER.start_as_current_span("routes.get_upload_boxes")
 async def get_upload_boxes(
-    user_id: str,
+    user_id: UUID4,
     repository: WorkPackageRepositoryDummy,
     auth_context: UserAuthContext,
 ) -> list[UploadBox]:
     """Get upload boxes using an internal auth token with a user context."""
     try:
-        if user_id != auth_context.id:
+        if str(user_id) != auth_context.id:
             raise repository.WorkPackageAccessError(
                 "Not authorized to get upload boxes"
             )
-        upload_boxes = await repository.get_upload_boxes(auth_context=auth_context)
+        upload_boxes = await repository.get_upload_boxes(user_id=user_id)
     except repository.WorkPackageAccessError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error
     return upload_boxes

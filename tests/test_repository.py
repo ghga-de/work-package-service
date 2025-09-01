@@ -26,6 +26,7 @@ from ghga_service_commons.utils.utc_dates import UTCDatetime
 from hexkit.providers.mongodb.testutils import MongoDbFixture
 from hexkit.utils import now_utc_ms_prec
 
+from tests.fixtures.access import BOXES_WITH_UPLOAD_ACCESS, USERS_WITH_UPLOAD_ACCESS
 from wps.config import Config
 from wps.core.models import (
     Dataset,
@@ -391,3 +392,35 @@ async def test_box_crud_error_handling(
     inserted = collection.find().to_list()
     assert len(inserted) == 1
     assert inserted[0]["_id"] == box_id
+
+
+async def test_get_boxes(repository: WorkPackageRepository, mongodb: MongoDbFixture):
+    """Test retrieving multiple boxes based on user ID."""
+    # Insert some boxes
+    box_ids = BOXES_WITH_UPLOAD_ACCESS
+    boxes = [
+        UploadBox(
+            id=box_ids[i], title=f"Box{i}", description=f"This is upload box #{i}"
+        )
+        for i in range(len(box_ids))
+    ]
+    boxes.sort(key=lambda x: x.id)
+
+    for box in boxes:
+        await repository.register_upload_box(box)
+
+    # Mock the access API to tell us the test user has access to those boxes
+    user_id = USERS_WITH_UPLOAD_ACCESS[0]
+
+    # Try with random user ID - should get an empty list
+    retrieved_boxes: list[UploadBox] = await repository.get_upload_boxes(
+        user_id=uuid4()
+    )
+    assert not retrieved_boxes
+
+    # Try for real
+    retrieved_boxes = await repository.get_upload_boxes(user_id=user_id)
+    assert retrieved_boxes
+    assert len(retrieved_boxes) == 2
+    retrieved_boxes.sort(key=lambda x: x.id)
+    assert retrieved_boxes == boxes

@@ -622,23 +622,16 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(error, extra={"box_id": box_id})
             raise error from err
 
-    async def get_upload_boxes(self, *, auth_context: AuthContext) -> list[UploadBox]:
+    async def get_upload_boxes(self, *, user_id: UUID4) -> list[UploadBox]:
         """Get the list of all upload boxes accessible to the authenticated user."""
-        try:
-            user_id = UUID(auth_context.id)
-        except ValueError as error:
-            access_error = self.WorkPackageAccessError("Malformed user ID supplied")
-            log.error(access_error)
-            raise access_error from error
-
-        if user_id is None:
-            access_error = self.WorkPackageAccessError("No internal user specified")
-            log.error(access_error)
-            raise access_error
-
         # Get accessible upload boxes from access service
         box_id_to_expiration = await self._access.get_accessible_boxes_with_expiration(
             user_id
+        )
+        log.debug(
+            "Retrieved %i upload boxes for user %s",
+            len(box_id_to_expiration),
+            str(user_id),
         )
 
         upload_boxes: list[UploadBox] = []

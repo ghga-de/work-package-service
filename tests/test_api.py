@@ -17,7 +17,7 @@
 """Test the API of the work package service."""
 
 from datetime import datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi import status
@@ -336,3 +336,47 @@ async def test_get_datasets(
     returned = response_data[0]
     expected = {**DATASET.model_dump(), "expires": expires}
     assert DatasetWithExpiration(**returned) == DatasetWithExpiration(**expected)
+
+
+async def test_get_upload_boxes(
+    client: AsyncTestClient,
+    auth_headers: dict[str, str],
+    httpx_mock: HTTPXMock,
+    mongodb: MongoDbFixture,
+    config: Config,
+):
+    """Test the endpoint for retrieving upload box access by user ID"""
+    box_id1 = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
+    box_id2 = "40bdf805-7e85-45d1-9ad7-4f66b8fd9c7b"
+    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
+    expires = (now_utc_ms_prec() + timedelta(days=180)).isoformat()
+    httpx_mock.add_response(
+        method="GET",
+        url=f"http://access/upload-access/users/{user_id}/boxes",
+        json={
+            box_id1: expires,
+            box_id2: expires,
+        },
+    )
+
+    # Insert boxes into the DB using the ids defined above
+    box1 = {
+        "_id": UUID(box_id1),
+        "title": "Box1",
+        "description": "This is box 1",
+    }
+    box2 = {"_id": UUID(box_id2), "title": "Box2", "description": "This is box 2"}
+    db = mongodb.client[config.db_name]
+    collection = db[config.upload_boxes_collection]
+    collection.insert_one(box1)
+    collection.insert_one(box2)
+
+    response = await client.get(
+        f"/users/{user_id}/boxes",
+        headers=auth_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
+    assert isinstance(data, list)
+    assert len(data) == 2

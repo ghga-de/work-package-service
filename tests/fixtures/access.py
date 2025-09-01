@@ -30,7 +30,7 @@ USERS_WITH_UPLOAD_ACCESS = [UUID("4624fb56-2d5f-4a8a-9a6c-cc0226a4f55a")]
 DATASETS_WITH_DOWNLOAD_ACCESS = ["some-dataset-id"]
 BOXES_WITH_UPLOAD_ACCESS = [
     UUID("e47f4b8a-3f2c-4e8b-9a1c-7d4e5f6a7b8c"),
-    UUID("f58e5c9b-4e3d-5f9c-ab2d-8e5f6a7b8c9d"),
+    UUID("f58e5c9b-4e3d-4f9c-ab2d-8e5f6a7b8c9d"),
 ]
 
 __all__ = ["AccessCheckMock"]
