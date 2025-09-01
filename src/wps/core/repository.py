@@ -597,26 +597,30 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
     async def register_upload_box(self, upload_box: UploadBox) -> None:
         """Register an upload box."""
-        # Implementation will be added when upload box DAO is available
-        # For now, this is a placeholder
-        pass
+        await self._upload_box_dao.upsert(upload_box)
+        log.info("Upserted UploadBox with ID %s", str(upload_box.id))
 
     async def delete_upload_box(self, box_id: UUID4) -> None:
         """Delete an upload box with the given ID."""
-        # Implementation will be added when upload box DAO is available
-        # For now, this is a placeholder
-        pass
+        try:
+            await self._upload_box_dao.delete(id_=box_id)
+            log.info("Deleted UploadBox with ID %s", str(box_id))
+        except ResourceNotFoundError:
+            log.info(
+                "UploadBox with ID %s not found, presumed already deleted.", str(box_id)
+            )
 
     async def get_upload_box(self, box_id: UUID4) -> UploadBox:
         """Get a registered upload box using the given ID.
 
-        If the upload box does not exist, an UploadBoxNotFoundError will be raised.
+        Raises an `UploadBoxNotFoundError` if no doc with the box_id exists.
         """
-        # Implementation will be added when upload box DAO is available
-        # For now, return a placeholder
-        raise self.UploadBoxNotFoundError(
-            "Upload box functionality not yet implemented"
-        )
+        try:
+            return await self._upload_box_dao.get_by_id(box_id)
+        except ResourceNotFoundError as err:
+            error = self.UploadBoxNotFoundError("UploadBox not found")
+            log.error(error, extra={"box_id": box_id})
+            raise error from err
 
     async def get_upload_boxes(self, *, auth_context: AuthContext) -> list[UploadBox]:
         """Get the list of all upload boxes accessible to the authenticated user."""

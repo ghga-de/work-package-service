@@ -29,6 +29,7 @@ from hexkit.utils import now_utc_ms_prec
 from wps.config import Config
 from wps.core.models import (
     Dataset,
+    UploadBox,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
@@ -327,3 +328,66 @@ async def test_retrieve_work_package_without_box_id(
     assert retrieved_package.id == old_work_package_id
     assert retrieved_package.dataset_id == "some-old-dataset-id"
     assert retrieved_package.box_id is None  # Should be None for old documents
+
+
+async def test_box_crud(
+    repository: WorkPackageRepository, mongodb: MongoDbFixture, config: Config
+):
+    """Test box insertion, retrieval, and deletion."""
+    db = mongodb.client[mongodb.config.db_name]
+    collection = db[config.upload_boxes_collection]
+    box_id = uuid4()
+    box = UploadBox(
+        id=box_id,
+        title="My Upload",
+        description="abc123",
+    )
+    doc = {
+        "_id": box_id,
+        "title": "My Upload",
+        "description": "abc123",
+    }
+
+    # Register
+    await repository.register_upload_box(box)
+    inserted = collection.find().to_list()
+    assert len(inserted) == 1
+    assert inserted[0] == doc
+
+    # Get
+    retrieved = await repository.get_upload_box(box_id=box_id)
+    assert retrieved.model_dump() == box.model_dump()
+
+    # Delete
+    await repository.delete_upload_box(box_id=box_id)
+    remaining_docs = collection.find().to_list()
+    assert len(remaining_docs) == 0
+
+
+async def test_box_crud_error_handling(
+    repository: WorkPackageRepository, mongodb: MongoDbFixture, config: Config
+):
+    """Test error handling for the upload box crud methods."""
+    # Delete box that doesn't exist - should not see any error
+    await repository.delete_upload_box(box_id=uuid4())
+
+    # Get box that doesn't exist - should get an error
+    with pytest.raises(WorkPackageRepository.UploadBoxNotFoundError):
+        await repository.get_upload_box(box_id=uuid4())
+
+    # Register box twice - should not see an error
+    box_id = uuid4()
+    box = UploadBox(
+        id=box_id,
+        title="My Upload",
+        description="abc123",
+    )
+    await repository.register_upload_box(box)
+    await repository.register_upload_box(box)
+
+    # Verify that there is only one doc in the box collection
+    db = mongodb.client[mongodb.config.db_name]
+    collection = db[config.upload_boxes_collection]
+    inserted = collection.find().to_list()
+    assert len(inserted) == 1
+    assert inserted[0]["_id"] == box_id

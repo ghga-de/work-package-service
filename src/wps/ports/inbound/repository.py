@@ -151,7 +151,7 @@ class WorkPackageRepositoryPort(ABC):
     async def get_upload_box(self, box_id: UUID4) -> UploadBox:
         """Get a registered upload box using the given ID.
 
-        If the upload box does not exist, a DatasetNotFoundError will be raised.
+        Raises an `UploadBoxNotFoundError` if no doc with the box_id exists.
         """
 
     @abstractmethod
