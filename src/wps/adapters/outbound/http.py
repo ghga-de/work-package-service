@@ -16,6 +16,7 @@
 
 """Outbound HTTP calls"""
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -31,6 +32,7 @@ from wps.ports.outbound.access import AccessCheckPort
 
 __all__ = ["AccessCheckAdapter", "AccessCheckConfig"]
 
+log = logging.getLogger(__name__)
 
 TIMEOUT = 60
 
@@ -113,17 +115,29 @@ class AccessCheckAdapter(AccessCheckPort):
         """Check until when the given user has upload access for the given box."""
         url = f"{self._url}/upload-access/users/{user_id}/boxes/{box_id}"
         response = await self._client.get(url)
-        if response.status_code == httpx.codes.OK:
-            valid_until = response.json()
-            if not valid_until:
-                return None
-            try:
-                return datetime.fromisoformat(valid_until)
-            except (ValueError, TypeError) as error:
-                raise self.AccessCheckError from error
-        if response.status_code == httpx.codes.NOT_FOUND:
+        status_code = response.status_code
+        if status_code == httpx.codes.NOT_FOUND:
             return None
-        raise self.AccessCheckError
+        elif status_code != httpx.codes.OK:
+            log.error("Call to the access API failed with code %i", status_code)
+            raise self.AccessCheckError()
+        valid_until = response.json()
+        if not valid_until:
+            return None
+        try:
+            return datetime.fromisoformat(valid_until)
+        except (ValueError, TypeError) as err:
+            log.error(
+                "There was an error converting the response (%s) from the access"
+                + " API to a datetime.",
+                valid_until,
+                extra={
+                    "valid_until": valid_until,
+                    "user_id": user_id,
+                    "box_id": box_id,
+                },
+            )
+            raise self.AccessCheckError from err
 
     @TRACER.start_as_current_span(
         "AccessCheckAdapter.get_accessible_boxes_with_expiration"
@@ -137,15 +151,39 @@ class AccessCheckAdapter(AccessCheckPort):
         """
         url = f"{self._url}/upload-access/users/{user_id}/boxes"
         response = await self._client.get(url)
-        if response.status_code == httpx.codes.OK:
-            box_ids = response.json()
-            try:
-                return {
-                    UUID(box_id): datetime.fromisoformat(valid_until)
-                    for box_id, valid_until in box_ids.items()
-                }
-            except (ValueError, TypeError) as error:
-                raise self.AccessCheckError from error
-        if response.status_code == httpx.codes.NOT_FOUND:
+        status_code = response.status_code
+        if status_code == httpx.codes.NOT_FOUND:
             return {}
-        raise self.AccessCheckError
+        elif status_code != httpx.codes.OK:
+            log.error("Call to the access API failed with code %i", status_code)
+            raise self.AccessCheckError()
+        box_ids = response.json()
+        accessible_boxes: dict[UUID4, UTCDatetime] = {}
+        for box_id, valid_until in box_ids.items():
+            extra = {
+                "valid_until": valid_until,
+                "user_id": user_id,
+                "box_id": box_id,
+            }
+            try:
+                converted_datetime = datetime.fromisoformat(valid_until)
+            except (ValueError, TypeError) as err:
+                log.error(
+                    "There was an error converting a datetime (%s) from the access API.",
+                    valid_until,
+                    extra=extra,
+                )
+                raise self.AccessCheckError from err
+
+            try:
+                converted_box_id = UUID(box_id)
+            except (ValueError, TypeError) as err:
+                log.error(
+                    "There was an error converting a box ID (%s) to a UUID from the access API.",
+                    box_id,
+                    extra=extra,
+                )
+                raise self.AccessCheckError from err
+
+            accessible_boxes[converted_box_id] = converted_datetime
+        return accessible_boxes
