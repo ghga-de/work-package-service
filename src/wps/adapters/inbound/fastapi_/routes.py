@@ -147,7 +147,7 @@ async def create_download_work_order_token(
     repository: WorkPackageRepositoryDummy,
     work_package_access_token: WorkPackageAccessToken,
 ) -> JSONResponse:
-    """Get an encrypted work order token using a work package access token (legacy endpoint for downloads)."""
+    """Get an encrypted work order token using a work package access token."""
     try:
         if not (work_package_id and file_id and work_package_access_token):
             raise repository.WorkPackageAccessError
