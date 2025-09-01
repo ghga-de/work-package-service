@@ -30,7 +30,13 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 from wps.constants import TRACER
-from wps.core.models import Dataset, DatasetFile, UploadBox, WorkPackageType
+from wps.core.models import (
+    Dataset,
+    DatasetFile,
+    ResearchDataUploadBox,
+    UploadBox,
+    WorkPackageType,
+)
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
 
 __all__ = [
@@ -155,7 +161,7 @@ class OutboxSubTranslator(DaoSubscriberProtocol):
     """Outbox-style event subscriber for UploadBox events"""
 
     event_topic: str
-    dto_model = UploadBox
+    dto_model = ResearchDataUploadBox
 
     def __init__(
         self,
@@ -166,11 +172,16 @@ class OutboxSubTranslator(DaoSubscriberProtocol):
         self.event_topic = config.upload_box_topic
         self._repository = work_package_repository
 
-    async def changed(self, resource_id: str, update: UploadBox) -> None:
+    async def changed(self, resource_id: str, update: ResearchDataUploadBox) -> None:
         """Consume a change event (created or updated) for the resource with the given
         ID.
         """
-        await self._repository.register_upload_box(upload_box=update)
+        upload_box = UploadBox(
+            id=update.box_id,
+            title=update.title,
+            description=update.description,
+        )
+        await self._repository.register_upload_box(upload_box=upload_box)
 
     async def deleted(self, resource_id: str) -> None:
         """Consume an event indicating the deletion of the resource with the given ID."""

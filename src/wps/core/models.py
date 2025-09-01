@@ -146,6 +146,31 @@ class UploadFileWorkOrder(BaseWorkOrderToken):
         return work_type
 
 
+class ResearchDataUploadBoxState(StrEnum):
+    """The allowed states for an ResearchDataUploadBox instance"""
+
+    OPEN = "open"
+    LOCKED = "locked"
+    CLOSED = "closed"
+
+
+class ResearchDataUploadBox(BaseModel):
+    """A class representing a ResearchDataUploadBox.
+
+    Contains all fields from the FileUploadBox and shares IDs.
+    """
+
+    box_id: UUID4  # unique identifier for the instance
+    locked: bool = False  # Whether or not changes to the files in the box are allowed
+    file_count: int = 0  # The number of files in the box
+    size: int = 0  # The total size of all files in the box
+    state: ResearchDataUploadBoxState  # one of OPEN, LOCKED, CLOSED
+    title: str  # short meaningful name for the box
+    description: str  # describes the upload box in more detail
+    last_changed: UTCDatetime
+    changed_by: UUID4  # ID of the user who performed the latest change
+
+
 class UploadBox(BaseDto):
     """A model describing an upload box that groups file uploads."""
 

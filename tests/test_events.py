@@ -25,9 +25,10 @@ import pytest
 import pytest_asyncio
 from hexkit.providers.akafka.testutils import KafkaFixture
 from hexkit.providers.mongodb.testutils import MongoDbFixture
+from hexkit.utils import now_utc_ms_prec
 
 from wps.config import Config
-from wps.core.models import UploadBox
+from wps.core.models import ResearchDataUploadBox, UploadBox
 from wps.prepare import Consumer, prepare_consumer
 
 from .fixtures import (  # noqa: F401
@@ -235,10 +236,19 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
     """Test consuming an 'upserted' & 'deleted' upload box event in the outbox consumer."""
     # Create a test upload box
     test_box_id = uuid4()
-    test_upload_box = UploadBox(
-        id=test_box_id,
+    test_event = ResearchDataUploadBox(
+        box_id=test_box_id,
         title="Test Upload Box",
         description="A test upload box for testing outbox events",
+        state="open",  # type: ignore
+        changed_by=uuid4(),
+        last_changed=now_utc_ms_prec(),
+    )
+
+    test_box = UploadBox(
+        id=test_box_id,
+        title=test_event.title,
+        description=test_event.description,
     )
 
     # Create a mock repository to track calls
@@ -252,7 +262,7 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
 
         # Publish an outbox 'upserted' event for upload box
         await kafka.publish_event(
-            payload=test_upload_box.model_dump(),
+            payload=test_event.model_dump(mode="json"),
             topic=config.upload_box_topic,
             type_="upserted",
             key=str(test_box_id),
@@ -265,9 +275,7 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
         await asyncio.sleep(RETRY_INTERVAL)
 
         # Verify that register_upload_box was called with the correct upload box
-        mock_repository.register_upload_box.assert_called_once_with(
-            upload_box=test_upload_box
-        )
+        mock_repository.register_upload_box.assert_called_once_with(upload_box=test_box)
 
         # Publish an outbox 'deleted' event
         await kafka.publish_event(
