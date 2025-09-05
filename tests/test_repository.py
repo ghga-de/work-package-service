@@ -332,13 +332,16 @@ async def test_box_crud(
     db = mongodb.client[mongodb.config.db_name]
     collection = db[config.upload_boxes_collection]
     box_id = uuid4()
+    file_upload_box_id = uuid4()
     box = ResearchDataUploadBox(
         id=box_id,
+        file_upload_box_id=file_upload_box_id,
         title="My Upload",
         description="abc123",
     )
     doc = {
         "_id": box_id,
+        "file_upload_box_id": file_upload_box_id,
         "title": "My Upload",
         "description": "abc123",
     }
@@ -374,6 +377,7 @@ async def test_box_crud_error_handling(
     box_id = uuid4()
     box = ResearchDataUploadBox(
         id=box_id,
+        file_upload_box_id=uuid4(),
         title="My Upload",
         description="abc123",
     )
@@ -394,7 +398,10 @@ async def test_get_boxes(repository: WorkPackageRepository, mongodb: MongoDbFixt
     box_ids = BOXES_WITH_UPLOAD_ACCESS
     boxes = [
         ResearchDataUploadBox(
-            id=box_ids[i], title=f"Box{i}", description=f"This is upload box #{i}"
+            id=box_ids[i],
+            file_upload_box_id=uuid4(),
+            title=f"Box{i}",
+            description=f"This is upload box #{i}",
         )
         for i in range(len(box_ids))
     ]

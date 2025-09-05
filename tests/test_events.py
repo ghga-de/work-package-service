@@ -235,18 +235,22 @@ async def test_consume_from_retry(
 async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
     """Test consuming an 'upserted' & 'deleted' upload box event in the outbox consumer."""
     # Create a test upload box
-    test_box_id = uuid4()
+    research_data_upload_box_id = uuid4()
+    file_upload_box_id = uuid4()
     test_event = _ResearchDataUploadBox(
-        box_id=test_box_id,
+        id=research_data_upload_box_id,
         title="Test Upload Box",
         description="A test upload box for testing outbox events",
         state="open",  # type: ignore
+        file_upload_box_id=file_upload_box_id,
+        storage_alias="test",
         changed_by=uuid4(),
         last_changed=now_utc_ms_prec(),
     )
 
     test_box = ResearchDataUploadBox(
-        id=test_box_id,
+        id=research_data_upload_box_id,
+        file_upload_box_id=file_upload_box_id,
         title=test_event.title,
         description=test_event.description,
     )
@@ -265,7 +269,7 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
             payload=test_event.model_dump(mode="json"),
             topic=config.upload_box_topic,
             type_="upserted",
-            key=str(test_box_id),
+            key=str(research_data_upload_box_id),
         )
 
         # Process the event
@@ -279,11 +283,13 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
             payload={},
             topic=config.upload_box_topic,
             type_="deleted",
-            key=str(test_box_id),
+            key=str(research_data_upload_box_id),
         )
 
         # Process the event
         await asyncio.wait_for(subscriber.run(forever=False), timeout=TIMEOUT)
 
         # Verify that delete_upload_box was called with the correct upload box ID
-        mock_repository.delete_upload_box.assert_called_once_with(test_box_id)
+        mock_repository.delete_upload_box.assert_called_once_with(
+            research_data_upload_box_id
+        )

@@ -177,7 +177,8 @@ class OutboxSubTranslator(DaoSubscriberProtocol):
         ID.
         """
         upload_box = ResearchDataUploadBox(
-            id=update.box_id,
+            id=update.id,
+            file_upload_box_id=update.file_upload_box_id,
             title=update.title,
             description=update.description,
         )

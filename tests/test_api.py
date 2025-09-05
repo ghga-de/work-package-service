@@ -531,21 +531,32 @@ async def test_get_upload_boxes(
     # Insert boxes into the DB using the ids defined above
     box1 = {
         "_id": UUID(box_id1),
+        "file_upload_box_id": uuid4(),
         "title": "Box1",
         "description": "This is box 1",
     }
-    box2 = {"_id": UUID(box_id2), "title": "Box2", "description": "This is box 2"}
+    box2 = {
+        "_id": UUID(box_id2),
+        "file_upload_box_id": uuid4(),
+        "title": "Box2",
+        "description": "This is box 2",
+    }
+    box3 = {  # this one should be excluded
+        "_id": uuid4(),
+        "file_upload_box_id": uuid4(),
+        "title": "Box3",
+        "description": "This is box 3",
+    }
     db = mongodb.client[config.db_name]
     collection = db[config.upload_boxes_collection]
     collection.insert_one(box1)
     collection.insert_one(box2)
+    collection.insert_one(box3)
 
-    response = await client.get(
-        f"/users/{user_id}/boxes",
-        headers=auth_headers,
-    )
+    response = await client.get(f"/users/{user_id}/boxes", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
     assert isinstance(data, list)
     assert len(data) == 2
+    assert {box["id"] for box in data} == {box_id1, box_id2}

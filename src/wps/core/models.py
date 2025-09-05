@@ -166,10 +166,12 @@ class _ResearchDataUploadBox(BaseModel):
     Contains all fields from the FileUploadBox and shares IDs.
     """
 
-    box_id: UUID4  # unique identifier for the instance
+    id: UUID4  # unique identifier for the instance
+    file_upload_box_id: UUID4  # ID of the FileUploadBox in the UCS
     locked: bool = False  # Whether or not changes to the files in the box are allowed
     file_count: int = 0  # The number of files in the box
     size: int = 0  # The total size of all files in the box
+    storage_alias: str  # Storage alias assigned to the FileUploadBox
     state: _ResearchDataUploadBoxState  # one of OPEN, LOCKED, CLOSED
     title: str  # short meaningful name for the box
     description: str  # describes the upload box in more detail
@@ -180,7 +182,15 @@ class _ResearchDataUploadBox(BaseModel):
 class ResearchDataUploadBox(BaseDto):
     """A model describing an upload box that groups file uploads."""
 
-    id: UUID4 = Field(..., description="The ID of the full research data upload box.")
+    id: UUID4 = Field(
+        ...,
+        description="The ID of the full research data upload box."
+        + " This is the ID tied to upload claims.",
+    )
+    file_upload_box_id: UUID4 = Field(
+        ...,
+        description="The ID of the file upload box. This is the ID referenced by the Connector.",
+    )
     title: str = Field(..., description="The title of the upload box.")
     description: str | None = Field(
         None, description="The description of the upload box."

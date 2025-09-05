@@ -93,7 +93,7 @@ components:
       - expires
       title: DatasetWithExpiration
       type: object
-    UploadBox:
+    ResearchDataUploadBox:
       additionalProperties: false
       description: A model describing an upload box that groups file uploads.
       properties:
@@ -103,8 +103,15 @@ components:
           - type: 'null'
           description: The description of the upload box.
           title: Description
+        file_upload_box_id:
+          description: The ID of the file upload box. This is the ID referenced by
+            the Connector.
+          format: uuid4
+          title: File Upload Box Id
+          type: string
         id:
-          description: The upload box ID.
+          description: The ID of the full research data upload box. This is the ID
+            tied to upload claims.
           format: uuid4
           title: Id
           type: string
@@ -114,8 +121,9 @@ components:
           type: string
       required:
       - id
+      - file_upload_box_id
       - title
-      title: UploadBox
+      title: ResearchDataUploadBox
       type: object
     WOTWorkType:
       description: The type of work that a work order token authorizes.
@@ -289,7 +297,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/UploadBox'
+                  $ref: '#/components/schemas/ResearchDataUploadBox'
                 title: Response 200 Get Upload Boxes
                 type: array
           description: Upload boxes have been fetched.
