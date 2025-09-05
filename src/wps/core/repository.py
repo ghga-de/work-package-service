@@ -443,6 +443,9 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     ) -> str:
         """Create a work order token for a given work package and file.
 
+        The box ID populated in upload WOTs is the file_upload_box ID, not the main
+        ResearchDataUploadBox ID.
+
         In the following cases, a WorkPackageAccessError is raised:
         - if a work package with the given work_package_id does not exist
         - if the work type is not valid, i.e. one of create, upload, close, or delete
@@ -468,6 +471,11 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         extra["work_package_type"] = work_package.type
         user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
 
+        # Retrieve the ResearchDataUploadBox in order to get its FileUploadBox ID
+        # TODO: Error handling here
+        research_data_upload_box = await self._upload_box_dao.get_by_id(box_id)
+        file_upload_box_id = research_data_upload_box.file_upload_box_id
+
         if work_type == WOTWorkType.CREATE:
             if not alias:
                 access_error = self.WorkPackageAccessError(
@@ -478,7 +486,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             create_file_wot = CreateFileWorkOrder(
                 work_type=work_type,
                 alias=alias,
-                box_id=box_id,
+                box_id=file_upload_box_id,
                 user_public_crypt4gh_key=user_public_crypt4gh_key,
             )
             signed_wot = sign_work_order_token(create_file_wot, self._signing_key)
@@ -491,7 +499,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 raise access_error
             upload_file_wot = UploadFileWorkOrder(
                 work_type=work_type,
-                box_id=box_id,
+                box_id=file_upload_box_id,
                 file_id=file_id,
                 user_public_crypt4gh_key=user_public_crypt4gh_key,
             )

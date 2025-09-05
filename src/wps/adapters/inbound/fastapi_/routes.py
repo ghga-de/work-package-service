@@ -253,7 +253,7 @@ async def get_datasets(
     tags=["UploadBoxes"],
     summary="Get all upload boxes of the given user",
     description="Endpoint used to get details for all upload boxes"
-    " that are accessible to the given user.",
+    + " that are accessible to the given user.",
     responses={
         200: {
             "model": list[ResearchDataUploadBox],

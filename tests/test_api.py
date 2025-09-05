@@ -252,6 +252,7 @@ async def test_make_upload_work_order_token(
 ):
     """Test that upload-type work order tokens can be created."""
     box_id = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
+    file_upload_box_id = str(uuid4())
     user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
 
     # Mock upload access check to grant access
@@ -265,6 +266,7 @@ async def test_make_upload_work_order_token(
     # Insert an upload box into the database
     upload_box = {
         "_id": UUID(box_id),
+        "file_upload_box_id": UUID(file_upload_box_id),
         "title": "Test Upload Box",
         "description": "Box for testing upload functionality",
     }
@@ -290,7 +292,6 @@ async def test_make_upload_work_order_token(
 
     # Test CREATE work order token
     create_request = {"work_type": "create", "alias": "test-file"}
-
     response = await client.post(
         f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
         json=create_request,
@@ -306,11 +307,11 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "create"
     assert wot_dict["alias"] == "test-file"
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
+    assert wot_dict["box_id"] == file_upload_box_id
 
     # Test UPLOAD work order token
     test_file_id = str(uuid4())
     upload_request = {"work_type": "upload", "file_id": test_file_id}
-
     response = await client.post(
         f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
         json=upload_request,
@@ -323,6 +324,7 @@ async def test_make_upload_work_order_token(
     wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
     assert wot_dict["work_type"] == "upload"
     assert wot_dict["file_id"] == test_file_id
+    assert wot_dict["box_id"] == file_upload_box_id
 
     # Test CLOSE work order token
     close_request = {"work_type": "close", "file_id": test_file_id}
@@ -339,6 +341,7 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "close"
     assert wot_dict["file_id"] == test_file_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
+    assert wot_dict["box_id"] == file_upload_box_id
 
     # Test DELETE work order token
     delete_file_id = str(uuid4())
@@ -357,6 +360,7 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "delete"
     assert wot_dict["file_id"] == delete_file_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
+    assert wot_dict["box_id"] == file_upload_box_id
 
     # Test unauthorized access (wrong work package)
     response = await client.post(
@@ -420,6 +424,7 @@ async def test_get_upload_wot_expired_access(
     for which they previously had access, but which has since expired.
     """
     box_id = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
+    file_upload_box_id = uuid4()
     user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
 
     # Mock initial upload access check to grant access
@@ -433,6 +438,7 @@ async def test_get_upload_wot_expired_access(
     # Insert an upload box into the database
     upload_box = {
         "_id": UUID(box_id),
+        "file_upload_box_id": file_upload_box_id,
         "title": "Test Upload Box",
         "description": "Box for testing expired access",
     }
