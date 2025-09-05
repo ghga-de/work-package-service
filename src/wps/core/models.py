@@ -21,7 +21,15 @@ from enum import StrEnum
 
 from ghga_service_commons.utils.utc_dates import UTCDatetime
 from hexkit.protocols.dao import UUID4Field
-from pydantic import UUID4, BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import (
+    UUID4,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from wps.core.crypt import validate_public_key
 
@@ -204,27 +212,26 @@ class WorkPackageCreationData(BaseDto):
         """Validate the user's public Crypt4GH key."""
         return validate_public_key(key)
 
-    @field_validator("dataset_id", "box_id")
-    @classmethod
-    def validate_ids(cls, v, info):
+    @model_validator(mode="after")
+    def validate_ids(self):
         """Ensure exactly one of dataset_id or box_id is provided based on work type."""
-        values = info.data
-        work_package_type = values.get("type")
-        dataset_id = values.get("dataset_id")
-        box_id = values.get("box_id")
+        errors: list[str] = []
+        if self.type == WorkPackageType.DOWNLOAD:
+            if not self.dataset_id:
+                errors.append("dataset_id is required for download work packages")
+            if self.box_id:
+                errors.append("box_id shouldn't be provided for download work packages")
+        elif self.type == WorkPackageType.UPLOAD:
+            if not self.box_id:
+                errors.append("box_id is required for upload work packages")
+            if self.dataset_id:
+                errors.append(
+                    "dataset_id shouldn't be provided for upload work packages"
+                )
+        if errors:
+            raise ValueError("; ".join(errors))
 
-        if work_package_type == WorkPackageType.DOWNLOAD and not dataset_id:
-            raise ValueError("dataset_id is required for download work packages")
-        if work_package_type == WorkPackageType.UPLOAD and not box_id:
-            raise ValueError("box_id is required for upload work packages")
-        if work_package_type == WorkPackageType.DOWNLOAD and box_id:
-            raise ValueError("box_id should not be provided for download work packages")
-        if work_package_type == WorkPackageType.UPLOAD and dataset_id:
-            raise ValueError(
-                "dataset_id should not be provided for upload work packages"
-            )
-
-        return v
+        return self
 
 
 class WorkPackageCreationResponse(BaseModel):

@@ -68,13 +68,14 @@ def test_good_creation_data():
         + user_public_crypt4gh_key
         + "\n-----END CRYPT4GH PUBLIC KEY-----\n\n"
     )
+    test_box_id = uuid4()
     data = WorkPackageCreationData(
-        dataset_id="123-foo-456",
+        box_id=test_box_id,
         type=WorkPackageType.UPLOAD,
         file_ids=None,
         user_public_crypt4gh_key=wrapped_key,
     )
-    assert data.dataset_id == "123-foo-456"
+    assert data.box_id == test_box_id
     assert data.type == WorkPackageType.UPLOAD
     assert data.file_ids is None
     assert data.user_public_crypt4gh_key == user_public_crypt4gh_key
@@ -134,3 +135,63 @@ def test_work_package():
     assert package.full_user_name == "Dr. John Doe"
     assert package.files["another-file-id"] == ".bam"
     assert (package.expires - package.created).seconds == 60 * 60
+
+
+@pytest.mark.parametrize(
+    "dataset_id,box_id,work_type,expected_error",
+    [
+        pytest.param(
+            "some-dataset-id",
+            None,
+            WorkPackageType.UPLOAD,
+            "dataset_id shouldn't be provided for upload work packages",
+            id="UploadWithDatasetId",
+        ),
+        pytest.param(
+            None,
+            None,
+            WorkPackageType.UPLOAD,
+            "box_id is required for upload work packages",
+            id="UploadWithoutBoxId",
+        ),
+        pytest.param(
+            "some-dataset-id",
+            None,
+            WorkPackageType.UPLOAD,
+            "box_id is required for upload work packages; dataset_id shouldn't be provided for upload work packages",
+            id="UploadWithBothProblems",
+        ),
+        pytest.param(
+            None,
+            None,
+            WorkPackageType.DOWNLOAD,
+            "dataset_id is required for download work packages",
+            id="DownloadWithoutDatasetId",
+        ),
+        pytest.param(
+            "some-dataset-id",
+            uuid4(),
+            WorkPackageType.DOWNLOAD,
+            "box_id shouldn't be provided for download work packages",
+            id="DownloadWithBoxId",
+        ),
+        pytest.param(
+            None,
+            uuid4(),
+            WorkPackageType.DOWNLOAD,
+            "dataset_id is required for download work packages; box_id shouldn't be provided for download work packages",
+            id="DownloadWithBothProblems",
+        ),
+    ],
+)
+def test_work_package_creation_data_validation(
+    dataset_id, box_id, work_type, expected_error
+):
+    """Test validation of dataset_id/box_id requirements for different work package types."""
+    with pytest.raises(ValidationError, match=expected_error):
+        WorkPackageCreationData(
+            dataset_id=dataset_id,
+            box_id=box_id,
+            type=work_type,
+            user_public_crypt4gh_key=user_public_crypt4gh_key,
+        )
