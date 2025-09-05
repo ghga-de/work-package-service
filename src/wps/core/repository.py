@@ -294,7 +294,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         - the work package is for upload and the box ID is missing
         """
         extra = {"work_package_id": work_package.id}  # only used for logging
-        if not work_package.created <= now_utc_ms_prec() <= work_package.expires:
+        if not work_package.created <= now_utc_ms_prec() < work_package.expires:
             access_error = self.WorkPackageAccessError("Work package has expired")
             log.error(access_error, extra=extra)
             raise access_error
@@ -533,16 +533,11 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise dataset_not_found_error from error
 
     async def get_datasets(
-        self, *, auth_context: AuthContext, work_type: WorkPackageType | None = None
+        self, *, auth_context: AuthContext
     ) -> list[DatasetWithExpiration]:
         """Get the list of all datasets accessible to the authenticated user.
 
         The returned datasets also have an expiration date until when access is granted.
-
-        A work type can be specified for filtering the datasets. If no work type is
-        specified, the datasets for all work types (upload and download) are returned.
-
-        Note that currently only downloadable datasets are supported.
         """
         try:
             user_id = UUID(auth_context.id)
@@ -555,20 +550,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             access_error = self.WorkPackageAccessError("No internal user specified")
             log.error(access_error)
             raise access_error
-
-        if work_type is not None and work_type not in [
-            WorkPackageType.DOWNLOAD,
-            WorkPackageType.UPLOAD,
-        ]:
-            access_error = self.WorkPackageAccessError("Unsupported work type")
-            log.error(access_error, extra={"work_type": work_type})
-            raise access_error
-
-        # For now, only support download datasets
-        # Upload boxes will be handled by separate methods
-        if work_type == WorkPackageType.UPLOAD:
-            # Return empty list for upload work type as datasets don't apply
-            return []
 
         dataset_id_to_expiration = (
             await self._access.get_accessible_datasets_with_expiration(user_id)

@@ -28,7 +28,6 @@ from wps.core.models import (
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
-    WorkPackageType,
     WOTWorkType,
 )
 
@@ -127,16 +126,11 @@ class WorkPackageRepositoryPort(ABC):
 
     @abstractmethod
     async def get_datasets(
-        self, *, auth_context: AuthContext, work_type: WorkPackageType | None = None
+        self, *, auth_context: AuthContext
     ) -> list[DatasetWithExpiration]:
         """Get the list of all datasets accessible to the authenticated user.
 
         The returned datasets also have an expiration date until when access is granted.
-
-        A work type can be specified for filtering the datasets. If no work type is
-        specified, the datasets for all work types (upload and download) are returned.
-
-        Note that currently only downloadable datasets are supported.
         """
 
     @abstractmethod
