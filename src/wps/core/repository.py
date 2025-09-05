@@ -607,7 +607,10 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         )
 
         upload_boxes: list[UploadBox] = []
-        for box_id in box_id_to_expiration:
+        now = now_utc_ms_prec()
+        for box_id, expiration in box_id_to_expiration.items():
+            if expiration <= now:
+                continue
             try:
                 upload_box = await self.get_upload_box(box_id)
                 upload_boxes.append(upload_box)
