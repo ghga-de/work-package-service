@@ -38,12 +38,16 @@ def test_work_order_token():
     token = DownloadWorkOrder(
         work_type=WOTWorkType.DOWNLOAD,
         file_id="some-file-id",
-        user_id=uuid4(),
         user_public_crypt4gh_key="some-public-key",
-        full_user_name="Dr. John Doe",
-        email="john@home.org",
     )
-    assert token.full_user_name == "Dr. John Doe"
+    assert token.file_id == "some-file-id"
+
+    with pytest.raises(ValueError):
+        token = DownloadWorkOrder(
+            work_type="upload",  # type: ignore
+            file_id="some_file_id",
+            user_public_crypt4gh_key="some-public-key",
+        )
 
 
 def test_good_creation_data():

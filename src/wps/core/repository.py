@@ -425,9 +425,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         wot = DownloadWorkOrder(
             work_type=WOTWorkType.DOWNLOAD,
             file_id=file_id,
-            user_id=work_package.user_id,
-            full_user_name=work_package.full_user_name,
-            email=work_package.email,
             user_public_crypt4gh_key=user_public_crypt4gh_key,
         )
         signed_wot = sign_work_order_token(wot, self._signing_key)
@@ -482,9 +479,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 work_type=work_type,
                 alias=alias,
                 box_id=box_id,
-                user_id=work_package.user_id,
-                full_user_name=work_package.full_user_name,
-                email=work_package.email,
                 user_public_crypt4gh_key=user_public_crypt4gh_key,
             )
             signed_wot = sign_work_order_token(create_file_wot, self._signing_key)
@@ -499,9 +493,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 work_type=work_type,
                 box_id=box_id,
                 file_id=file_id,
-                user_id=work_package.user_id,
-                full_user_name=work_package.full_user_name,
-                email=work_package.email,
                 user_public_crypt4gh_key=user_public_crypt4gh_key,
             )
             signed_wot = sign_work_order_token(upload_file_wot, self._signing_key)

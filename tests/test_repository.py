@@ -157,10 +157,7 @@ async def test_work_package_and_token_creation(
     assert wot_claims == {
         "work_type": package.type.value,
         "file_id": "file-id-3",
-        "user_id": str(package.user_id),
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
-        "full_user_name": package.full_user_name,
-        "email": package.email,
     }
 
     # create another work package for specific files
@@ -211,10 +208,7 @@ async def test_work_package_and_token_creation(
     assert wot_claims == {
         "work_type": package.type.value,
         "file_id": "file-id-1",
-        "user_id": str(package.user_id),
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
-        "full_user_name": package.full_user_name,
-        "email": package.email,
     }
 
     # revoke access and check that work order token cannot be created any more

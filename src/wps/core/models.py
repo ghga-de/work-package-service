@@ -94,10 +94,7 @@ class BaseWorkOrderToken(BaseModel):
     """Base model for work order tokens."""
 
     work_type: WOTWorkType
-    user_id: UUID4
     user_public_crypt4gh_key: str
-    full_user_name: str
-    email: EmailStr
 
     model_config = ConfigDict(frozen=True)
 
@@ -107,9 +104,9 @@ class DownloadWorkOrder(BaseWorkOrderToken):
 
     file_id: str  # should be the file accession, as opposed to UUID4 used for uploads
 
-    @classmethod
     @field_validator("work_type")
-    def enforce_work_type(cls, work_type):
+    @classmethod
+    def enforce_work_type(cls, work_type: str):
         """Make sure work type matches expectation"""
         if work_type != WOTWorkType.DOWNLOAD:
             raise ValueError("Work type must be 'download'.")
@@ -122,8 +119,8 @@ class CreateFileWorkOrder(BaseWorkOrderToken):
     alias: str
     box_id: UUID4
 
-    @classmethod
     @field_validator("work_type")
+    @classmethod
     def enforce_work_type(cls, work_type):
         """Make sure work type matches expectation"""
         if work_type != WOTWorkType.CREATE:
@@ -137,8 +134,8 @@ class UploadFileWorkOrder(BaseWorkOrderToken):
     file_id: UUID4
     box_id: UUID4
 
-    @classmethod
     @field_validator("work_type")
+    @classmethod
     def enforce_work_type(cls, work_type):
         """Make sure work type matches expectation"""
         if work_type not in [WOTWorkType.UPLOAD, WOTWorkType.CLOSE, WOTWorkType.DELETE]:

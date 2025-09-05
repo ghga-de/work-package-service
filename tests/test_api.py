@@ -85,7 +85,7 @@ async def test_get_work_package_unauthorized(client: AsyncTestClient):
 
 
 @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
-async def test_create_download_work_order_token(
+async def test_make_download_work_order_token(
     client: AsyncTestClient,
     auth_headers: dict[str, str],
     httpx_mock: HTTPXMock,
@@ -223,10 +223,7 @@ async def test_create_download_work_order_token(
     assert wot_dict == {
         "work_type": "download",
         "file_id": "file-id-3",
-        "user_id": user_id,
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
-        "full_user_name": "Dr. John Doe",
-        "email": "john@home.org",
     }
 
     # mock the access check for the test dataset to revoke access
@@ -246,7 +243,7 @@ async def test_create_download_work_order_token(
 
 
 @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
-async def test_create_upload_work_order_token(
+async def test_make_upload_work_order_token(
     client: AsyncTestClient,
     auth_headers: dict[str, str],
     httpx_mock: HTTPXMock,
@@ -308,7 +305,6 @@ async def test_create_upload_work_order_token(
     wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
     assert wot_dict["work_type"] == "create"
     assert wot_dict["alias"] == "test-file"
-    assert wot_dict["user_id"] == user_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
 
     # Test UPLOAD work order token
@@ -327,7 +323,6 @@ async def test_create_upload_work_order_token(
     wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
     assert wot_dict["work_type"] == "upload"
     assert wot_dict["file_id"] == test_file_id
-    assert wot_dict["user_id"] == user_id
 
     # Test CLOSE work order token
     close_request = {"work_type": "close", "file_id": test_file_id}
@@ -343,7 +338,6 @@ async def test_create_upload_work_order_token(
     wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
     assert wot_dict["work_type"] == "close"
     assert wot_dict["file_id"] == test_file_id
-    assert wot_dict["user_id"] == user_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
 
     # Test DELETE work order token
@@ -362,7 +356,6 @@ async def test_create_upload_work_order_token(
     wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
     assert wot_dict["work_type"] == "delete"
     assert wot_dict["file_id"] == delete_file_id
-    assert wot_dict["user_id"] == user_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
 
     # Test unauthorized access (wrong work package)
