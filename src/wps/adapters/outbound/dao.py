@@ -54,6 +54,6 @@ async def get_upload_box_dao(
     """Get an UploadBox DAO."""
     return await dao_factory.get_dao(
         name=config.upload_boxes_collection,
-        dto_model=models.UploadBox,
+        dto_model=models.ResearchDataUploadBox,
         id_field="id",
     )

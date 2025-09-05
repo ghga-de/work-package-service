@@ -28,7 +28,7 @@ from hexkit.providers.mongodb.testutils import MongoDbFixture
 from hexkit.utils import now_utc_ms_prec
 
 from wps.config import Config
-from wps.core.models import ResearchDataUploadBox, UploadBox
+from wps.core.models import ResearchDataUploadBox, _ResearchDataUploadBox
 from wps.prepare import Consumer, prepare_consumer
 
 from .fixtures import (  # noqa: F401
@@ -236,7 +236,7 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
     """Test consuming an 'upserted' & 'deleted' upload box event in the outbox consumer."""
     # Create a test upload box
     test_box_id = uuid4()
-    test_event = ResearchDataUploadBox(
+    test_event = _ResearchDataUploadBox(
         box_id=test_box_id,
         title="Test Upload Box",
         description="A test upload box for testing outbox events",
@@ -245,7 +245,7 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
         last_changed=now_utc_ms_prec(),
     )
 
-    test_box = UploadBox(
+    test_box = ResearchDataUploadBox(
         id=test_box_id,
         title=test_event.title,
         description=test_event.description,

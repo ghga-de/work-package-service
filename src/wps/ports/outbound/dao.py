@@ -29,5 +29,5 @@ __all__ = [
 
 # ports described by type aliases:
 DatasetDaoPort = Dao[models.Dataset]
-UploadBoxDaoPort = Dao[models.UploadBox]
+UploadBoxDaoPort = Dao[models.ResearchDataUploadBox]
 WorkPackageDaoPort = Dao[models.WorkPackage]

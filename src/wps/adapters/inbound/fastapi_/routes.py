@@ -28,7 +28,7 @@ from wps.constants import TRACER, WORK_ORDER_TOKEN_VALID_SECONDS
 from wps.core.models import (
     Dataset,
     DatasetWithExpiration,
-    UploadBox,
+    ResearchDataUploadBox,
     WorkOrderTokenRequest,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
@@ -256,7 +256,7 @@ async def get_datasets(
     " that are accessible to the given user.",
     responses={
         200: {
-            "model": list[UploadBox],
+            "model": list[ResearchDataUploadBox],
             "description": "Upload boxes have been fetched.",
         },
         403: {"description": "Not authorized to get upload boxes."},
@@ -269,7 +269,7 @@ async def get_upload_boxes(
     user_id: UUID4,
     repository: WorkPackageRepositoryDummy,
     auth_context: UserAuthContext,
-) -> list[UploadBox]:
+) -> list[ResearchDataUploadBox]:
     """Get upload boxes using an internal auth token with a user context."""
     try:
         if str(user_id) != auth_context.id:

@@ -34,8 +34,8 @@ from wps.core.models import (
     Dataset,
     DatasetFile,
     ResearchDataUploadBox,
-    UploadBox,
     WorkPackageType,
+    _ResearchDataUploadBox,
 )
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
 
@@ -161,7 +161,7 @@ class OutboxSubTranslator(DaoSubscriberProtocol):
     """Outbox-style event subscriber for UploadBox events"""
 
     event_topic: str
-    dto_model = ResearchDataUploadBox
+    dto_model = _ResearchDataUploadBox
 
     def __init__(
         self,
@@ -172,11 +172,11 @@ class OutboxSubTranslator(DaoSubscriberProtocol):
         self.event_topic = config.upload_box_topic
         self._repository = work_package_repository
 
-    async def changed(self, resource_id: str, update: ResearchDataUploadBox) -> None:
+    async def changed(self, resource_id: str, update: _ResearchDataUploadBox) -> None:
         """Consume a change event (created or updated) for the resource with the given
         ID.
         """
-        upload_box = UploadBox(
+        upload_box = ResearchDataUploadBox(
             id=update.box_id,
             title=update.title,
             description=update.description,

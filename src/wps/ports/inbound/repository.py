@@ -24,7 +24,7 @@ from pydantic import UUID4
 from wps.core.models import (
     Dataset,
     DatasetWithExpiration,
-    UploadBox,
+    ResearchDataUploadBox,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
@@ -134,7 +134,7 @@ class WorkPackageRepositoryPort(ABC):
         """
 
     @abstractmethod
-    async def register_upload_box(self, upload_box: UploadBox) -> None:
+    async def register_upload_box(self, upload_box: ResearchDataUploadBox) -> None:
         """Register an upload box."""
 
     @abstractmethod
@@ -142,12 +142,12 @@ class WorkPackageRepositoryPort(ABC):
         """Delete an upload box with the given ID."""
 
     @abstractmethod
-    async def get_upload_box(self, box_id: UUID4) -> UploadBox:
+    async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBox:
         """Get a registered upload box using the given ID.
 
         Raises an `UploadBoxNotFoundError` if no doc with the box_id exists.
         """
 
     @abstractmethod
-    async def get_upload_boxes(self, *, user_id: UUID4) -> list[UploadBox]:
+    async def get_upload_boxes(self, *, user_id: UUID4) -> list[ResearchDataUploadBox]:
         """Get the list of all upload boxes accessible to the authenticated user."""

@@ -30,7 +30,7 @@ from tests.fixtures.access import BOXES_WITH_UPLOAD_ACCESS, USERS_WITH_UPLOAD_AC
 from wps.config import Config
 from wps.core.models import (
     Dataset,
-    UploadBox,
+    ResearchDataUploadBox,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
@@ -332,7 +332,7 @@ async def test_box_crud(
     db = mongodb.client[mongodb.config.db_name]
     collection = db[config.upload_boxes_collection]
     box_id = uuid4()
-    box = UploadBox(
+    box = ResearchDataUploadBox(
         id=box_id,
         title="My Upload",
         description="abc123",
@@ -372,7 +372,7 @@ async def test_box_crud_error_handling(
 
     # Register box twice - should not see an error
     box_id = uuid4()
-    box = UploadBox(
+    box = ResearchDataUploadBox(
         id=box_id,
         title="My Upload",
         description="abc123",
@@ -393,7 +393,7 @@ async def test_get_boxes(repository: WorkPackageRepository, mongodb: MongoDbFixt
     # Insert some boxes
     box_ids = BOXES_WITH_UPLOAD_ACCESS
     boxes = [
-        UploadBox(
+        ResearchDataUploadBox(
             id=box_ids[i], title=f"Box{i}", description=f"This is upload box #{i}"
         )
         for i in range(len(box_ids))
@@ -407,7 +407,7 @@ async def test_get_boxes(repository: WorkPackageRepository, mongodb: MongoDbFixt
     user_id = USERS_WITH_UPLOAD_ACCESS[0]
 
     # Try with random user ID - should get an empty list
-    retrieved_boxes: list[UploadBox] = await repository.get_upload_boxes(
+    retrieved_boxes: list[ResearchDataUploadBox] = await repository.get_upload_boxes(
         user_id=uuid4()
     )
     assert not retrieved_boxes

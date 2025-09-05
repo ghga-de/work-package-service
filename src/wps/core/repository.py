@@ -33,7 +33,7 @@ from wps.core.models import (
     Dataset,
     DatasetWithExpiration,
     DownloadWorkOrder,
-    UploadBox,
+    ResearchDataUploadBox,
     UploadFileWorkOrder,
     WorkPackage,
     WorkPackageCreationData,
@@ -567,7 +567,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             datasets_with_expiration.append(dataset_with_expiration)
         return datasets_with_expiration
 
-    async def register_upload_box(self, upload_box: UploadBox) -> None:
+    async def register_upload_box(self, upload_box: ResearchDataUploadBox) -> None:
         """Register an upload box."""
         await self._upload_box_dao.upsert(upload_box)
         log.info("Upserted UploadBox with ID %s", str(upload_box.id))
@@ -582,7 +582,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 "UploadBox with ID %s not found, presumed already deleted.", str(box_id)
             )
 
-    async def get_upload_box(self, box_id: UUID4) -> UploadBox:
+    async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBox:
         """Get a registered upload box using the given ID.
 
         Raises an `UploadBoxNotFoundError` if no doc with the box_id exists.
@@ -594,7 +594,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(error, extra={"box_id": box_id})
             raise error from err
 
-    async def get_upload_boxes(self, *, user_id: UUID4) -> list[UploadBox]:
+    async def get_upload_boxes(self, *, user_id: UUID4) -> list[ResearchDataUploadBox]:
         """Get the list of all upload boxes accessible to the authenticated user."""
         # Get accessible upload boxes from access service
         box_id_to_expiration = await self._access.get_accessible_boxes_with_expiration(
@@ -606,7 +606,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             str(user_id),
         )
 
-        upload_boxes: list[UploadBox] = []
+        upload_boxes: list[ResearchDataUploadBox] = []
         now = now_utc_ms_prec()
         for box_id, expiration in box_id_to_expiration.items():
             if expiration <= now:
