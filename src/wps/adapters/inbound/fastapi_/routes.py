@@ -182,6 +182,7 @@ async def create_download_work_order_token(
     },
     status_code=201,
 )
+@TRACER.start_as_current_span("routes.create_upload_work_order_token")
 async def create_upload_work_order_token(
     work_package_id: UUID4,
     box_id: UUID4,
