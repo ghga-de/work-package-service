@@ -271,9 +271,6 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
         # Process the event
         await asyncio.wait_for(subscriber.run(forever=False), timeout=TIMEOUT)
 
-        # Wait a bit for async processing
-        await asyncio.sleep(RETRY_INTERVAL)
-
         # Verify that register_upload_box was called with the correct upload box
         mock_repository.register_upload_box.assert_called_once_with(upload_box=test_box)
 
@@ -287,9 +284,6 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
 
         # Process the event
         await asyncio.wait_for(subscriber.run(forever=False), timeout=TIMEOUT)
-
-        # Wait a bit for async processing
-        await asyncio.sleep(RETRY_INTERVAL)
 
         # Verify that delete_upload_box was called with the correct upload box ID
         mock_repository.delete_upload_box.assert_called_once_with(test_box_id)
