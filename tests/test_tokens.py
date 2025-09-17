@@ -29,7 +29,6 @@ from wps.core.models import (
     CreateFileWorkOrder,
     DownloadWorkOrder,
     UploadFileWorkOrder,
-    WorkType,
 )
 from wps.core.tokens import (
     generate_work_package_access_token,
@@ -70,18 +69,18 @@ def test_hash_token():
     "work_order_token",
     [
         DownloadWorkOrder(
-            work_type=WorkType.DOWNLOAD,
+            work_type="download",
             file_id="some-file-id",
             user_public_crypt4gh_key="some-public-key",
         ),
         CreateFileWorkOrder(
-            work_type=WorkType.CREATE,
+            work_type="create",
             box_id=uuid4(),
             alias="file1",
             user_public_crypt4gh_key="some-public-key",
         ),
         UploadFileWorkOrder(
-            work_type=WorkType.UPLOAD,
+            work_type="upload",
             box_id=uuid4(),
             file_id=uuid4(),
             user_public_crypt4gh_key="some-public-key",

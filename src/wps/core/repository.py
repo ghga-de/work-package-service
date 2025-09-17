@@ -29,9 +29,11 @@ from pydantic import UUID4, Field, SecretStr
 from pydantic_settings import BaseSettings
 
 from wps.core.models import (
+    CloseFileWorkOrder,
     CreateFileWorkOrder,
     Dataset,
     DatasetWithExpiration,
+    DeleteFileWorkOrder,
     DownloadWorkOrder,
     ResearchDataUploadBox,
     UploadFileWorkOrder,
@@ -82,6 +84,14 @@ class WorkPackageConfig(BaseSettings):
         description="The private key for signing work order tokens",
         examples=['{"crv": "P-256", "kty": "EC", "x": "...", "y": "..."}'],
     )
+
+
+FileUploadToken = UploadFileWorkOrder | CloseFileWorkOrder | DeleteFileWorkOrder
+WORK_TYPE_TO_MODEL: dict[str, type[FileUploadToken]] = {
+    "upload": UploadFileWorkOrder,
+    "close": CloseFileWorkOrder,
+    "delete": DeleteFileWorkOrder,
+}
 
 
 class WorkPackageRepository(WorkPackageRepositoryPort):
@@ -418,7 +428,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise access_error
 
         wot = DownloadWorkOrder(
-            work_type=WorkType.DOWNLOAD,
+            work_type="download",
             file_id=file_id,
             user_public_crypt4gh_key=work_package.user_public_crypt4gh_key,
         )
@@ -472,40 +482,41 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         research_data_upload_box = await self._upload_box_dao.get_by_id(box_id)
         file_upload_box_id = research_data_upload_box.file_upload_box_id
 
-        if work_type == WorkType.CREATE:
-            if not alias:
+        match work_type:
+            case "create":
+                if not alias:
+                    access_error = self.WorkPackageAccessError(
+                        "Alias must be provided for file creation WOTs"
+                    )
+                    log.error(access_error, extra=extra)
+                    raise access_error
+                work_order = CreateFileWorkOrder(
+                    work_type=work_type,
+                    alias=alias,
+                    box_id=file_upload_box_id,
+                    user_public_crypt4gh_key=user_public_crypt4gh_key,
+                )
+                signed_wot = sign_work_order_token(work_order, self._signing_key)
+            case "upload" | "close" | "delete":
+                if not file_id:
+                    access_error = self.WorkPackageAccessError(
+                        "File ID must be provided for file upload WOTs"
+                    )
+                    log.error(access_error, extra=extra)
+                    raise access_error
+                work_order = WORK_TYPE_TO_MODEL[work_type](
+                    work_type=work_type,  # type: ignore
+                    box_id=file_upload_box_id,
+                    file_id=file_id,
+                    user_public_crypt4gh_key=user_public_crypt4gh_key,
+                )
+                signed_wot = sign_work_order_token(work_order, self._signing_key)
+            case _:
                 access_error = self.WorkPackageAccessError(
-                    "Alias must be provided for file creation WOTs"
+                    f"Unsupported Work Order Token type: {work_type}"
                 )
                 log.error(access_error, extra=extra)
                 raise access_error
-            work_order = CreateFileWorkOrder(
-                work_type=work_type,
-                alias=alias,
-                box_id=file_upload_box_id,
-                user_public_crypt4gh_key=user_public_crypt4gh_key,
-            )
-            signed_wot = sign_work_order_token(work_order, self._signing_key)
-        elif work_type in [WorkType.UPLOAD, WorkType.CLOSE, WorkType.DELETE]:
-            if not file_id:
-                access_error = self.WorkPackageAccessError(
-                    "File ID must be provided for file upload WOTs"
-                )
-                log.error(access_error, extra=extra)
-                raise access_error
-            upload_file_wot = UploadFileWorkOrder(
-                work_type=work_type,
-                box_id=file_upload_box_id,
-                file_id=file_id,
-                user_public_crypt4gh_key=user_public_crypt4gh_key,
-            )
-            signed_wot = sign_work_order_token(upload_file_wot, self._signing_key)
-        else:
-            access_error = self.WorkPackageAccessError(
-                f"Unsupported Work Order Token type: {work_type.value}"
-            )
-            log.error(access_error, extra=extra)
-            raise access_error
         return encrypt(signed_wot, user_public_crypt4gh_key)
 
     async def register_dataset(self, dataset: Dataset) -> None:

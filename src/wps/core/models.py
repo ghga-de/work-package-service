@@ -18,6 +18,7 @@ in the API.
 """
 
 from enum import StrEnum
+from typing import Literal, TypeVar
 
 from ghga_service_commons.utils.utc_dates import UTCDatetime
 from hexkit.protocols.dao import UUID4Field
@@ -35,7 +36,9 @@ from wps.core.crypt import validate_public_key
 
 __all__ = [
     "BaseWorkOrderToken",
+    "CloseFileWorkOrder",
     "CreateFileWorkOrder",
+    "DeleteFileWorkOrder",
     "ResearchDataUploadBox",
     "UploadFileWorkOrder",
     "WorkOrderTokenRequest",
@@ -87,67 +90,52 @@ class DatasetWithExpiration(Dataset):
     )
 
 
-class WorkType(StrEnum):
-    """The type of work that a work order token authorizes."""
+WorkType = Literal["create", "upload", "close", "delete", "download"]
 
-    CREATE = "create"
-    UPLOAD = "upload"
-    CLOSE = "close"
-    DELETE = "delete"
-    DOWNLOAD = "download"
+T = TypeVar("T", bound=WorkType)
 
 
-class BaseWorkOrderToken(BaseModel):
+class BaseWorkOrderToken[T: WorkType](BaseModel):
     """Base model for work order tokens."""
 
-    work_type: WorkType
+    work_type: T
     user_public_crypt4gh_key: str
-
     model_config = ConfigDict(frozen=True)
 
 
-class DownloadWorkOrder(BaseWorkOrderToken):
+class DownloadWorkOrder(BaseWorkOrderToken[Literal["download"]]):
     """WOT schema authorizing a user to download a file from a dataset"""
 
     file_id: str  # should be the file accession, as opposed to UUID4 used for uploads
 
-    @field_validator("work_type")
-    @classmethod
-    def enforce_work_type(cls, work_type: str):
-        """Make sure work type matches expectation"""
-        if work_type != WorkType.DOWNLOAD:
-            raise ValueError("Work type must be 'download'.")
-        return work_type
 
-
-class CreateFileWorkOrder(BaseWorkOrderToken):
+class CreateFileWorkOrder(BaseWorkOrderToken[Literal["create"]]):
     """WOT schema authorizing a user to create a new FileUpload"""
 
     alias: str
     box_id: UUID4
 
-    @field_validator("work_type")
-    @classmethod
-    def enforce_work_type(cls, work_type):
-        """Make sure work type matches expectation"""
-        if work_type != WorkType.CREATE:
-            raise ValueError("Work type must be 'create'.")
-        return work_type
 
+class _FileUploadToken(BaseModel):
+    """Partial schema for WOTs authorizing a user to work with existing file uploads.
 
-class UploadFileWorkOrder(BaseWorkOrderToken):
-    """WOT schema authorizing a user to work with existing FileUploads"""
+    This is for existing file uploads only, not for the initiation of new file uploads.
+    """
 
     file_id: UUID4
     box_id: UUID4
 
-    @field_validator("work_type")
-    @classmethod
-    def enforce_work_type(cls, work_type):
-        """Make sure work type matches expectation"""
-        if work_type not in [WorkType.UPLOAD, WorkType.CLOSE, WorkType.DELETE]:
-            raise ValueError("Work type must be 'upload', 'close', or 'delete'.")
-        return work_type
+
+class UploadFileWorkOrder(BaseWorkOrderToken[Literal["upload"]], _FileUploadToken):
+    """WOT schema authorizing a user to get a file part upload URL"""
+
+
+class CloseFileWorkOrder(BaseWorkOrderToken[Literal["close"]], _FileUploadToken):
+    """WOT schema authorizing a user to complete a file upload"""
+
+
+class DeleteFileWorkOrder(BaseWorkOrderToken[Literal["delete"]], _FileUploadToken):
+    """WOT schema authorizing a user to delete a file upload"""
 
 
 # TODO: reference the event schema once this is moved there. for now, mark with '_'
