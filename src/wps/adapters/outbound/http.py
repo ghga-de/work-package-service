@@ -80,6 +80,12 @@ class AccessCheckAdapter(AccessCheckPort):
             try:
                 return datetime.fromisoformat(valid_until)
             except (ValueError, TypeError) as error:
+                log.error(
+                    "There was an error extracting the access expiration date from"
+                    + " the response from the Access API.",
+                    exc_info=True,
+                    extra={"user_id": user_id, "dataset_id": dataset_id},
+                )
                 raise self.AccessCheckError from error
         if response.status_code == httpx.codes.NOT_FOUND:
             return None
@@ -99,13 +105,20 @@ class AccessCheckAdapter(AccessCheckPort):
         response = await self._client.get(url)
         if response.status_code == httpx.codes.OK:
             dataset_ids = response.json()
-            try:
-                return {
-                    dataset_id: datetime.fromisoformat(valid_until)
-                    for dataset_id, valid_until in dataset_ids.items()
-                }
-            except (ValueError, TypeError) as error:
-                raise self.AccessCheckError from error
+            extra = {"user_id": user_id}
+            accessible_datasets: dict[str, UTCDatetime] = {}
+            for dataset_id, valid_until in dataset_ids.items():
+                try:
+                    converted_datetime = datetime.fromisoformat(valid_until)
+                    accessible_datasets[dataset_id] = converted_datetime
+                except (ValueError, TypeError) as err:
+                    log.error(
+                        "There was an error converting a datetime (%s) from the access API.",
+                        valid_until,
+                        extra=extra,
+                    )
+                    raise self.AccessCheckError from err
+            return accessible_datasets
         if response.status_code == httpx.codes.NOT_FOUND:
             return {}
         raise self.AccessCheckError
