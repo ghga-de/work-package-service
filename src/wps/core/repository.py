@@ -39,7 +39,7 @@ from wps.core.models import (
     WorkPackageCreationData,
     WorkPackageCreationResponse,
     WorkPackageType,
-    WOTWorkType,
+    WorkType,
 )
 from wps.core.tokens import (
     generate_work_package_access_token,
@@ -423,7 +423,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise access_error
 
         wot = DownloadWorkOrder(
-            work_type=WOTWorkType.DOWNLOAD,
+            work_type=WorkType.DOWNLOAD,
             file_id=file_id,
             user_public_crypt4gh_key=user_public_crypt4gh_key,
         )
@@ -434,7 +434,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self,
         *,
         work_package_id: UUID4,
-        work_type: WOTWorkType,
+        work_type: WorkType,
         box_id: UUID4,
         alias: str | None = None,
         file_id: UUID4 | None = None,
@@ -476,7 +476,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         research_data_upload_box = await self._upload_box_dao.get_by_id(box_id)
         file_upload_box_id = research_data_upload_box.file_upload_box_id
 
-        if work_type == WOTWorkType.CREATE:
+        if work_type == WorkType.CREATE:
             if not alias:
                 access_error = self.WorkPackageAccessError(
                     "Alias must be provided for file creation WOTs"
@@ -490,7 +490,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 user_public_crypt4gh_key=user_public_crypt4gh_key,
             )
             signed_wot = sign_work_order_token(create_file_wot, self._signing_key)
-        elif work_type in [WOTWorkType.UPLOAD, WOTWorkType.CLOSE, WOTWorkType.DELETE]:
+        elif work_type in [WorkType.UPLOAD, WorkType.CLOSE, WorkType.DELETE]:
             if not file_id:
                 access_error = self.WorkPackageAccessError(
                     "File ID must be provided for file upload WOTs"

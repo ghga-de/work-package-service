@@ -38,13 +38,13 @@ __all__ = [
     "CreateFileWorkOrder",
     "ResearchDataUploadBox",
     "UploadFileWorkOrder",
-    "WOTWorkType",
     "WorkOrderTokenRequest",
     "WorkOrderTokenResponse",
     "WorkPackage",
     "WorkPackageCreationData",
     "WorkPackageCreationResponse",
     "WorkPackageType",
+    "WorkType",
 ]
 
 
@@ -88,7 +88,7 @@ class DatasetWithExpiration(Dataset):
     )
 
 
-class WOTWorkType(StrEnum):
+class WorkType(StrEnum):
     """The type of work that a work order token authorizes."""
 
     CREATE = "create"
@@ -101,7 +101,7 @@ class WOTWorkType(StrEnum):
 class BaseWorkOrderToken(BaseModel):
     """Base model for work order tokens."""
 
-    work_type: WOTWorkType
+    work_type: WorkType
     user_public_crypt4gh_key: str
 
     model_config = ConfigDict(frozen=True)
@@ -116,7 +116,7 @@ class DownloadWorkOrder(BaseWorkOrderToken):
     @classmethod
     def enforce_work_type(cls, work_type: str):
         """Make sure work type matches expectation"""
-        if work_type != WOTWorkType.DOWNLOAD:
+        if work_type != WorkType.DOWNLOAD:
             raise ValueError("Work type must be 'download'.")
         return work_type
 
@@ -131,7 +131,7 @@ class CreateFileWorkOrder(BaseWorkOrderToken):
     @classmethod
     def enforce_work_type(cls, work_type):
         """Make sure work type matches expectation"""
-        if work_type != WOTWorkType.CREATE:
+        if work_type != WorkType.CREATE:
             raise ValueError("Work type must be 'create'.")
         return work_type
 
@@ -146,7 +146,7 @@ class UploadFileWorkOrder(BaseWorkOrderToken):
     @classmethod
     def enforce_work_type(cls, work_type):
         """Make sure work type matches expectation"""
-        if work_type not in [WOTWorkType.UPLOAD, WOTWorkType.CLOSE, WOTWorkType.DELETE]:
+        if work_type not in [WorkType.UPLOAD, WorkType.CLOSE, WorkType.DELETE]:
             raise ValueError("Work type must be 'upload', 'close', or 'delete'.")
         return work_type
 
@@ -305,7 +305,7 @@ class WorkPackage(WorkPackageDetails):
 class WorkOrderTokenRequest(BaseModel):
     """Request model for creating work order tokens."""
 
-    work_type: WOTWorkType = Field(
+    work_type: WorkType = Field(
         ..., description="The type of work order token to create"
     )
     alias: str | None = Field(

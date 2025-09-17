@@ -28,7 +28,7 @@ from wps.core.models import (
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
-    WOTWorkType,
+    WorkType,
 )
 
 
@@ -91,7 +91,7 @@ class WorkPackageRepositoryPort(ABC):
         self,
         *,
         work_package_id: UUID4,
-        work_type: WOTWorkType,
+        work_type: WorkType,
         box_id: UUID4,
         alias: str | None = None,
         file_id: UUID4 | None = None,

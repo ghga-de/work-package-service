@@ -27,7 +27,7 @@ from wps.core.models import (
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageType,
-    WOTWorkType,
+    WorkType,
 )
 
 from .fixtures.crypt import user_public_crypt4gh_key
@@ -36,7 +36,7 @@ from .fixtures.crypt import user_public_crypt4gh_key
 def test_work_order_token():
     """Test instantiating a work order token model."""
     token = DownloadWorkOrder(
-        work_type=WOTWorkType.DOWNLOAD,
+        work_type=WorkType.DOWNLOAD,
         file_id="some-file-id",
         user_public_crypt4gh_key="some-public-key",
     )

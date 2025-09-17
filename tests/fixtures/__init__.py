@@ -103,7 +103,7 @@ def fixture_config(kafka: KafkaFixture, mongodb: MongoDbFixture) -> Config:
     """Fixture for creating a test configuration."""
     return Config(
         auth_key=AUTH_KEY_PAIR.export_public(),  # pyright: ignore
-        access_url="http://access",
+        access_url="http://access",  # type: ignore
         work_package_signing_key=SIGNING_KEY_PAIR.export_private(),  # pyright: ignore
         **kafka.config.model_dump(exclude={"kafka_enable_dlq"}),
         **mongodb.config.model_dump(),
