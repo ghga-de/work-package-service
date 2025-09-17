@@ -456,7 +456,7 @@ The service requires the following configuration parameters:
   ```
 
 
-- <a id="properties/access_url"></a>**`access_url`** *(string, required)*: URL pointing to the internal access API (supports both download and upload access).
+- <a id="properties/access_url"></a>**`access_url`** *(string, format: uri, required)*: Base URL of the internal access API for download and upload. Length must be between 1 and 2083 (inclusive).
 
 
   Examples:

@@ -347,10 +347,13 @@
       "type": "string"
     },
     "access_url": {
-      "description": "URL pointing to the internal access API (supports both download and upload access).",
+      "description": "Base URL of the internal access API for download and upload",
       "examples": [
         "http://127.0.0.1/"
       ],
+      "format": "uri",
+      "maxLength": 2083,
+      "minLength": 1,
       "title": "Access Url",
       "type": "string"
     },

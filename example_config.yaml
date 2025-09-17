@@ -1,4 +1,4 @@
-access_url: http://127.0.0.1:8080
+access_url: http://127.0.0.1:8080/
 api_root_path: ''
 auth_algs:
 - ES256

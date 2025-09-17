@@ -24,7 +24,7 @@ from uuid import UUID
 
 import httpx
 from ghga_service_commons.utils.utc_dates import UTCDatetime
-from pydantic import UUID4, Field
+from pydantic import UUID4, Field, HttpUrl
 from pydantic_settings import BaseSettings
 
 from wps.constants import TRACER
@@ -40,10 +40,10 @@ TIMEOUT = 60
 class AccessCheckConfig(BaseSettings):
     """Config parameters for checking dataset access."""
 
-    access_url: str = Field(
+    access_url: HttpUrl = Field(
         ...,
         examples=["http://127.0.0.1/"],
-        description="URL pointing to the internal access API (supports both download and upload access).",
+        description="Base URL of the internal access API for download and upload",
     )
 
 
@@ -52,8 +52,9 @@ class AccessCheckAdapter(AccessCheckPort):
 
     def __init__(self, *, config: AccessCheckConfig, client: httpx.AsyncClient):
         """Configure the access grant adapter."""
-        self._download_url = f"{config.access_url}/download-access"
-        self._upload_url = f"{config.access_url}/upload-access"
+        base_url = str(config.access_url).rstrip("/")
+        self._download_url = f"{base_url}/download-access"
+        self._upload_url = f"{base_url}/upload-access"
         self._client = client
 
     @classmethod
