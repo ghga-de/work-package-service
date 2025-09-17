@@ -65,13 +65,13 @@ class WorkPackageConfig(BaseSettings):
         "datasets",
         description="The name of the database collection for datasets",
     )
-    work_packages_collection: str = Field(
-        "workPackages",
-        description="The name of the database collection for work packages",
-    )
     upload_boxes_collection: str = Field(
         "uploadBoxes",
         description="The name of the database collection for upload boxes",
+    )
+    work_packages_collection: str = Field(
+        "workPackages",
+        description="The name of the database collection for work packages",
     )
     work_package_valid_days: int = Field(
         30,
@@ -235,12 +235,9 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(access_error, extra=extra)
             raise access_error
 
-        # For upload work packages, files will be created dynamically
-        # so we start with an empty files dict
-        files: dict[str, str] = {}
-
+        # For upload work packages, files aren't used, so the arg is an empty dict
         return await self._create_work_package_record(
-            creation_data, auth_context, user_id, expires, files, box_id=box_id
+            creation_data, auth_context, user_id, expires, {}, box_id=box_id
         )
 
     async def _create_work_package_record(  # noqa: PLR0913
@@ -329,8 +326,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
         In the following cases, a WorkPackageAccessError is raised:
         - if a work package with the given work_package_id does not exist
-        - if check_valid is set and the work package has expired or the box/dataset
-          ID is missing
+        - if check_valid is set and the work package has expired
         - if a work_package_access_token is specified and it does not match
           the token hash that is stored in the work package
         """
@@ -383,7 +379,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         check_valid: bool = True,
         work_package_access_token: str | None = None,
     ) -> str:
-        """Create a work order token for a given work package and file.
+        """Create a download work order token for a given work package and file.
 
         In the following cases, a WorkPackageAccessError is raised:
         - if a work package with the given work_package_id does not exist
@@ -405,7 +401,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         )
 
         extra["work_package_type"] = work_package.type
-        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
 
         if work_package.type != WorkPackageType.DOWNLOAD:
             access_error = self.WorkPackageAccessError(
@@ -425,10 +420,10 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         wot = DownloadWorkOrder(
             work_type=WorkType.DOWNLOAD,
             file_id=file_id,
-            user_public_crypt4gh_key=user_public_crypt4gh_key,
+            user_public_crypt4gh_key=work_package.user_public_crypt4gh_key,
         )
         signed_wot = sign_work_order_token(wot, self._signing_key)
-        return encrypt(signed_wot, user_public_crypt4gh_key)
+        return encrypt(signed_wot, work_package.user_public_crypt4gh_key)
 
     async def get_upload_wot(  # noqa: PLR0913
         self,
@@ -441,7 +436,8 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         check_valid: bool = True,
         work_package_access_token: str | None = None,
     ) -> str:
-        """Create a work order token for a given work package and file.
+        """Create an upload work order token for a given work package, work type,
+        box id, file id and alias.
 
         The box ID populated in upload WOTs is the file_upload_box ID, not the main
         ResearchDataUploadBox ID.
@@ -483,13 +479,13 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 )
                 log.error(access_error, extra=extra)
                 raise access_error
-            create_file_wot = CreateFileWorkOrder(
+            work_order = CreateFileWorkOrder(
                 work_type=work_type,
                 alias=alias,
                 box_id=file_upload_box_id,
                 user_public_crypt4gh_key=user_public_crypt4gh_key,
             )
-            signed_wot = sign_work_order_token(create_file_wot, self._signing_key)
+            signed_wot = sign_work_order_token(work_order, self._signing_key)
         elif work_type in [WorkType.UPLOAD, WorkType.CLOSE, WorkType.DELETE]:
             if not file_id:
                 access_error = self.WorkPackageAccessError(
@@ -578,16 +574,16 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     async def register_upload_box(self, upload_box: ResearchDataUploadBox) -> None:
         """Register an upload box."""
         await self._upload_box_dao.upsert(upload_box)
-        log.info("Upserted UploadBox with ID %s", str(upload_box.id))
+        log.info("Upserted UploadBox with ID %s", upload_box.id)
 
     async def delete_upload_box(self, box_id: UUID4) -> None:
         """Delete an upload box with the given ID."""
         try:
             await self._upload_box_dao.delete(id_=box_id)
-            log.info("Deleted UploadBox with ID %s", str(box_id))
+            log.info("Deleted UploadBox with ID %s", box_id)
         except ResourceNotFoundError:
             log.info(
-                "UploadBox with ID %s not found, presumed already deleted.", str(box_id)
+                "UploadBox with ID %s not found, presumed already deleted.", box_id
             )
 
     async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBox:
@@ -611,7 +607,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         log.debug(
             "Retrieved %i upload boxes for user %s",
             len(box_id_to_expiration),
-            str(user_id),
+            user_id,
         )
 
         upload_boxes: list[ResearchDataUploadBox] = []

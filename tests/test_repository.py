@@ -281,7 +281,7 @@ async def test_retrieve_work_package_without_box_id(
 ):
     """Test retrieving an existing WorkPackage document from the database and
     using that to create a WorkPackage pydantic model instance, ensuring that no errors
-    are raised when `box_id` is no included as a kwarg.
+    are raised when `box_id` is not included as a kwarg.
     """
     # Create an old-style work package document directly in the database (without box_id)
     old_work_package_id = uuid4()

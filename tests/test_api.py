@@ -46,8 +46,8 @@ from .fixtures.datasets import DATASET
 
 pytestmark = pytest.mark.asyncio()
 
-DOWNLOAD_URL = "http://access/download-access"
-UPLOAD_URL = "http://access/upload-access"
+DOWNLOAD_ACCESS_URL = "http://access/download-access"
+UPLOAD_ACCESS_URL = "http://access/upload-access"
 DATASET_CREATION_DATA = {
     "dataset_id": "some-dataset-id",
     "type": "download",
@@ -95,7 +95,7 @@ async def test_make_download_work_order_token(
     """Test that download-type work order tokens can be properly created."""
     # mock the access check for the test dataset to grant access
     user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
-    url = f"{DOWNLOAD_URL}/users/{user_id}/datasets/some-dataset-id"
+    url = f"{DOWNLOAD_ACCESS_URL}/users/{user_id}/datasets/some-dataset-id"
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(method="GET", url=url, json=valid_until)
 
@@ -229,7 +229,7 @@ async def test_make_download_work_order_token(
     # mock the access check for the test dataset to revoke access
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_URL}/users/{user_id}/datasets/some-dataset-id",
+        url=f"{DOWNLOAD_ACCESS_URL}/users/{user_id}/datasets/some-dataset-id",
         text="false",
     )
 
@@ -259,7 +259,7 @@ async def test_make_upload_work_order_token(
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{UPLOAD_URL}/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{user_id}/boxes/{box_id}",
         json=valid_until,
     )
 
@@ -399,7 +399,7 @@ async def test_get_datasets_when_none_authorized(
     expires = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_URL}/users/{user_id}/datasets",
+        url=f"{DOWNLOAD_ACCESS_URL}/users/{user_id}/datasets",
         json={"some-other-dataset-id": expires},
     )
 
@@ -431,7 +431,7 @@ async def test_get_upload_wot_expired_access(
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{UPLOAD_URL}/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{user_id}/boxes/{box_id}",
         json=valid_until,
     )
 
@@ -465,7 +465,7 @@ async def test_get_upload_wot_expired_access(
     # Mock expired access check - return null to indicate no access
     httpx_mock.add_response(
         method="GET",
-        url=f"{UPLOAD_URL}/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{user_id}/boxes/{box_id}",
         text="null",
     )
 
@@ -494,7 +494,7 @@ async def test_get_datasets(
     expires = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_URL}/users/{user_id}/datasets",
+        url=f"{DOWNLOAD_ACCESS_URL}/users/{user_id}/datasets",
         json={
             "some-dataset-id": expires,
             "some-non-existing-dataset-id": expires,
@@ -527,7 +527,7 @@ async def test_get_upload_boxes(
     expires = (now_utc_ms_prec() + timedelta(days=180)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{UPLOAD_URL}/users/{user_id}/boxes",
+        url=f"{UPLOAD_ACCESS_URL}/users/{user_id}/boxes",
         json={
             box_id1: expires,
             box_id2: expires,

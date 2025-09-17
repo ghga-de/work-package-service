@@ -39,7 +39,6 @@ __all__ = [
     "ResearchDataUploadBox",
     "UploadFileWorkOrder",
     "WorkOrderTokenRequest",
-    "WorkOrderTokenResponse",
     "WorkPackage",
     "WorkPackageCreationData",
     "WorkPackageCreationResponse",
@@ -314,9 +313,3 @@ class WorkOrderTokenRequest(BaseModel):
     file_id: UUID4 | None = Field(
         None, description="File ID (required for UPLOAD, CLOSE, DELETE work types)"
     )
-
-
-class WorkOrderTokenResponse(BaseModel):
-    """Response model for work order token creation."""
-
-    token: str = Field(..., description="The encrypted work order token")
