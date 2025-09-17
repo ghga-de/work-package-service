@@ -128,7 +128,7 @@ async def get_work_package(
 @router.post(
     "/work-packages/{work_package_id}/files/{file_id}/work-order-tokens",
     operation_id="create_download_work_order_token",
-    tags=["WorkPackages"],
+    tags=["WorkPackages", "download"],
     summary="Create a work order token for file download operations",
     description="Endpoint used to create a work order token for downloading a single file",
     responses={
@@ -170,7 +170,7 @@ async def create_download_work_order_token(
 @router.post(
     "/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
     operation_id="create_upload_work_order_token",
-    tags=["WorkPackages"],
+    tags=["WorkPackages", "upload"],
     summary="Create a work order token for file upload operations",
     description="Endpoint used to create a work order token for uploading a single file",
     responses={
@@ -217,7 +217,7 @@ async def create_upload_work_order_token(
 @router.get(
     "/users/{user_id}/datasets",
     operation_id="get_datasets",
-    tags=["Datasets"],
+    tags=["Datasets", "download"],
     summary="Get all datasets of the given user",
     description="Endpoint used to get details for all datasets"
     " that are accessible to the given user including their expiration dates.",
@@ -250,7 +250,7 @@ async def get_datasets(
 @router.get(
     "/users/{user_id}/boxes",
     operation_id="get_upload_boxes",
-    tags=["UploadBoxes"],
+    tags=["UploadBoxes", "upload"],
     summary="Get all upload boxes of the given user",
     description="Endpoint used to get details for all upload boxes"
     + " that are accessible to the given user.",

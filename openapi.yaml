@@ -310,6 +310,7 @@ paths:
       summary: Get all upload boxes of the given user
       tags:
       - UploadBoxes
+      - upload
   /users/{user_id}/datasets:
     get:
       description: Endpoint used to get details for all datasets that are accessible
@@ -342,6 +343,7 @@ paths:
       summary: Get all datasets of the given user
       tags:
       - Datasets
+      - download
   /work-packages:
     post:
       description: Endpoint used to create a new work package
@@ -437,6 +439,7 @@ paths:
       summary: Create a work order token for file upload operations
       tags:
       - WorkPackages
+      - upload
   /work-packages/{work_package_id}/files/{file_id}/work-order-tokens:
     post:
       description: Endpoint used to create a work order token for downloading a single
@@ -471,8 +474,12 @@ paths:
       summary: Create a work order token for file download operations
       tags:
       - WorkPackages
+      - download
 servers:
 - url: ''
 tags:
 - name: WorkPackages
 - name: Datasets
+- name: UploadBoxes
+- name: download
+- name: upload
