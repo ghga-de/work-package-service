@@ -69,7 +69,7 @@ class OutboxSubTranslatorConfig(BaseSettings):
 
 class EventSubTranslator(EventSubscriberProtocol):
     """A triple hexagonal translator compatible with the EventSubscriberProtocol that
-    is used to received events relevant for file uploads.
+    is used to received events relevant for datasets.
     """
 
     def __init__(
@@ -173,8 +173,8 @@ class OutboxSubTranslator(DaoSubscriberProtocol):
         self._repository = work_package_repository
 
     async def changed(self, resource_id: str, update: _ResearchDataUploadBox) -> None:
-        """Consume a change event (created or updated) for the resource with the given
-        ID.
+        """Consume a change event (created or updated) for the research data upload box
+        with the given ID.
         """
         upload_box = ResearchDataUploadBox(
             id=update.id,
@@ -185,6 +185,8 @@ class OutboxSubTranslator(DaoSubscriberProtocol):
         await self._repository.register_upload_box(upload_box=upload_box)
 
     async def deleted(self, resource_id: str) -> None:
-        """Consume an event indicating the deletion of the resource with the given ID."""
+        """Consume an event indicating the deletion of the research data upload box
+        with the given ID.
+        """
         with suppress(self._repository.UploadBoxNotFoundError):  # if already deleted
             await self._repository.delete_upload_box(UUID(resource_id))
