@@ -459,6 +459,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         - if check_valid is set and the work package has expired
         - if a work_package_access_token is specified and it does not match
           the token hash that is stored in the work package
+        - if an upload box is not found in the database
         """
         extra = {  # only used for logging
             "work_package_id": work_package_id,
@@ -478,8 +479,12 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
 
         # Retrieve the ResearchDataUploadBox in order to get its FileUploadBox ID
-        # TODO: Error handling here
-        research_data_upload_box = await self._upload_box_dao.get_by_id(box_id)
+        try:
+            research_data_upload_box = await self._upload_box_dao.get_by_id(box_id)
+        except ResourceNotFoundError as err:
+            access_error = self.WorkPackageAccessError("Upload box does not exist")
+            log.error(access_error, extra=extra)
+            raise access_error from err
         file_upload_box_id = research_data_upload_box.file_upload_box_id
 
         match work_type:
