@@ -32,6 +32,7 @@ from wps.constants import WORK_ORDER_TOKEN_VALID_SECONDS
 from wps.core.models import DatasetWithExpiration
 
 from .fixtures import (  # noqa: F401
+    AUTH_CLAIMS,
     SIGNING_KEY_PAIR,
     fixture_auth_headers,
     fixture_bad_auth_headers,
@@ -46,6 +47,9 @@ from .fixtures.datasets import DATASET
 
 pytestmark = pytest.mark.asyncio()
 
+USER_ID = AUTH_CLAIMS["id"]
+RDU_BOX_ID = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
+FILE_UPLOAD_BOX_ID = uuid4()
 DOWNLOAD_ACCESS_URL = "http://access/download-access"
 UPLOAD_ACCESS_URL = "http://access/upload-access"
 DATASET_CREATION_DATA = {
@@ -94,8 +98,7 @@ async def test_make_download_work_order_token(
 ):
     """Test that download-type work order tokens can be properly created."""
     # mock the access check for the test dataset to grant access
-    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
-    url = f"{DOWNLOAD_ACCESS_URL}/users/{user_id}/datasets/some-dataset-id"
+    url = f"{DOWNLOAD_ACCESS_URL}/users/{USER_ID}/datasets/some-dataset-id"
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(method="GET", url=url, json=valid_until)
 
@@ -229,7 +232,7 @@ async def test_make_download_work_order_token(
     # mock the access check for the test dataset to revoke access
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/users/{user_id}/datasets/some-dataset-id",
+        url=f"{DOWNLOAD_ACCESS_URL}/users/{USER_ID}/datasets/some-dataset-id",
         text="false",
     )
 
@@ -251,22 +254,18 @@ async def test_make_upload_work_order_token(
     config: Config,
 ):
     """Test that upload-type work order tokens can be created."""
-    box_id = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
-    file_upload_box_id = str(uuid4())
-    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
-
     # Mock upload access check to grant access
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{UPLOAD_ACCESS_URL}/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{USER_ID}/boxes/{RDU_BOX_ID}",
         json=valid_until,
     )
 
     # Insert an upload box into the database
     upload_box = {
-        "_id": UUID(box_id),
-        "file_upload_box_id": UUID(file_upload_box_id),
+        "_id": UUID(RDU_BOX_ID),
+        "file_upload_box_id": FILE_UPLOAD_BOX_ID,
         "title": "Test Upload Box",
         "description": "Box for testing upload functionality",
     }
@@ -276,7 +275,7 @@ async def test_make_upload_work_order_token(
 
     # Create an upload work package
     upload_creation_data = {
-        "box_id": box_id,
+        "box_id": RDU_BOX_ID,
         "type": "upload",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
@@ -293,7 +292,7 @@ async def test_make_upload_work_order_token(
     # Test CREATE work order token
     create_request = {"work_type": "create", "alias": "test-file"}
     response = await client.post(
-        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        f"/work-packages/{work_package_id}/boxes/{RDU_BOX_ID}/work-order-tokens",
         json=create_request,
         headers=headers_for_token(token),
     )
@@ -307,13 +306,13 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "create"
     assert wot_dict["alias"] == "test-file"
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
-    assert wot_dict["box_id"] == file_upload_box_id
+    assert wot_dict["box_id"] == str(FILE_UPLOAD_BOX_ID)
 
     # Test UPLOAD work order token
     test_file_id = str(uuid4())
     upload_request = {"work_type": "upload", "file_id": test_file_id}
     response = await client.post(
-        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        f"/work-packages/{work_package_id}/boxes/{RDU_BOX_ID}/work-order-tokens",
         json=upload_request,
         headers=headers_for_token(token),
     )
@@ -324,12 +323,12 @@ async def test_make_upload_work_order_token(
     wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
     assert wot_dict["work_type"] == "upload"
     assert wot_dict["file_id"] == test_file_id
-    assert wot_dict["box_id"] == file_upload_box_id
+    assert wot_dict["box_id"] == str(FILE_UPLOAD_BOX_ID)
 
     # Test CLOSE work order token
     close_request = {"work_type": "close", "file_id": test_file_id}
     response = await client.post(
-        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        f"/work-packages/{work_package_id}/boxes/{RDU_BOX_ID}/work-order-tokens",
         json=close_request,
         headers=headers_for_token(token),
     )
@@ -341,14 +340,14 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "close"
     assert wot_dict["file_id"] == test_file_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
-    assert wot_dict["box_id"] == file_upload_box_id
+    assert wot_dict["box_id"] == str(FILE_UPLOAD_BOX_ID)
 
     # Test DELETE work order token
     delete_file_id = str(uuid4())
     delete_request = {"work_type": "delete", "file_id": delete_file_id}
 
     response = await client.post(
-        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        f"/work-packages/{work_package_id}/boxes/{RDU_BOX_ID}/work-order-tokens",
         json=delete_request,
         headers=headers_for_token(token),
     )
@@ -360,11 +359,11 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "delete"
     assert wot_dict["file_id"] == delete_file_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
-    assert wot_dict["box_id"] == file_upload_box_id
+    assert wot_dict["box_id"] == str(FILE_UPLOAD_BOX_ID)
 
     # Test unauthorized access (wrong work package)
     response = await client.post(
-        f"/work-packages/{uuid4()}/boxes/{box_id}/work-order-tokens",
+        f"/work-packages/{uuid4()}/boxes/{RDU_BOX_ID}/work-order-tokens",
         json=create_request,
         headers=headers_for_token(token),
     )
@@ -395,17 +394,16 @@ async def test_get_datasets_when_none_authorized(
 ):
     """Test that no datasets are fetched when none are accessible."""
     # mock the access check for the test dataset
-    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
     expires = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/users/{user_id}/datasets",
+        url=f"{DOWNLOAD_ACCESS_URL}/users/{USER_ID}/datasets",
         json={"some-other-dataset-id": expires},
     )
 
     # get the list of datasets
 
-    response = await client.get(f"/users/{user_id}/datasets", headers=auth_headers)
+    response = await client.get(f"/users/{USER_ID}/datasets", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     assert isinstance(response_data, list)
@@ -423,22 +421,18 @@ async def test_get_upload_wot_expired_access(
     """Test that access is rejected when a user tries to get a WOT for an upload box
     for which they previously had access, but which has since expired.
     """
-    box_id = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
-    file_upload_box_id = uuid4()
-    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
-
     # Mock initial upload access check to grant access
     valid_until = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{UPLOAD_ACCESS_URL}/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{USER_ID}/boxes/{RDU_BOX_ID}",
         json=valid_until,
     )
 
     # Insert an upload box into the database
     upload_box = {
-        "_id": UUID(box_id),
-        "file_upload_box_id": file_upload_box_id,
+        "_id": UUID(RDU_BOX_ID),
+        "file_upload_box_id": FILE_UPLOAD_BOX_ID,
         "title": "Test Upload Box",
         "description": "Box for testing expired access",
     }
@@ -448,7 +442,7 @@ async def test_get_upload_wot_expired_access(
 
     # Create an upload work package
     upload_creation_data = {
-        "box_id": box_id,
+        "box_id": RDU_BOX_ID,
         "type": "upload",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
@@ -465,7 +459,7 @@ async def test_get_upload_wot_expired_access(
     # Mock expired access check - return null to indicate no access
     httpx_mock.add_response(
         method="GET",
-        url=f"{UPLOAD_ACCESS_URL}/users/{user_id}/boxes/{box_id}",
+        url=f"{UPLOAD_ACCESS_URL}/users/{USER_ID}/boxes/{RDU_BOX_ID}",
         text="null",
     )
 
@@ -473,7 +467,7 @@ async def test_get_upload_wot_expired_access(
     create_request = {"work_type": "create", "alias": "test-file"}
 
     response = await client.post(
-        f"/work-packages/{work_package_id}/boxes/{box_id}/work-order-tokens",
+        f"/work-packages/{work_package_id}/boxes/{RDU_BOX_ID}/work-order-tokens",
         json=create_request,
         headers=headers_for_token(token),
     )
@@ -490,11 +484,10 @@ async def test_get_datasets(
     """Test that the list of accessible datasets can be fetched."""
     # mock the access check for the test dataset
 
-    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
     expires = (now_utc_ms_prec() + timedelta(days=365)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{DOWNLOAD_ACCESS_URL}/users/{user_id}/datasets",
+        url=f"{DOWNLOAD_ACCESS_URL}/users/{USER_ID}/datasets",
         json={
             "some-dataset-id": expires,
             "some-non-existing-dataset-id": expires,
@@ -502,7 +495,7 @@ async def test_get_datasets(
     )
 
     # get the list of datasets
-    response = await client.get(f"/users/{user_id}/datasets", headers=auth_headers)
+    response = await client.get(f"/users/{USER_ID}/datasets", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
@@ -523,11 +516,10 @@ async def test_get_upload_boxes(
     """Test the endpoint for retrieving upload box access by user ID"""
     box_id1 = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
     box_id2 = "40bdf805-7e85-45d1-9ad7-4f66b8fd9c7b"
-    user_id = "a86f8281-e18a-429e-88a9-a5c8ea0cf754"
     expires = (now_utc_ms_prec() + timedelta(days=180)).isoformat()
     httpx_mock.add_response(
         method="GET",
-        url=f"{UPLOAD_ACCESS_URL}/users/{user_id}/boxes",
+        url=f"{UPLOAD_ACCESS_URL}/users/{USER_ID}/boxes",
         json={
             box_id1: expires,
             box_id2: expires,
@@ -559,7 +551,7 @@ async def test_get_upload_boxes(
     collection.insert_one(box2)
     collection.insert_one(box3)
 
-    response = await client.get(f"/users/{user_id}/boxes", headers=auth_headers)
+    response = await client.get(f"/users/{USER_ID}/boxes", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
