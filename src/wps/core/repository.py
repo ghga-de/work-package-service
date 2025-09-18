@@ -148,30 +148,21 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         box_id = creation_data.box_id
         work_type = creation_data.type
 
-        if work_type == WorkPackageType.DOWNLOAD:
-            if not dataset_id:
-                access_error = self.WorkPackageAccessError(
-                    "dataset_id required for download work packages"
+        match work_type:
+            case WorkPackageType.DOWNLOAD:
+                return await self._create_download_work_package(
+                    creation_data,
+                    auth_context,
+                    user_id,
+                    dataset_id,  # type: ignore
                 )
-                log.error(access_error)
-                raise access_error
-            return await self._create_download_work_package(
-                creation_data, auth_context, user_id, dataset_id
-            )
-        elif work_type == WorkPackageType.UPLOAD:
-            if not box_id:
-                access_error = self.WorkPackageAccessError(
-                    "box_id required for upload work packages"
+            case WorkPackageType.UPLOAD:
+                return await self._create_upload_work_package(
+                    creation_data,
+                    auth_context,
+                    user_id,
+                    box_id,  # type: ignore
                 )
-                log.error(access_error)
-                raise access_error
-            return await self._create_upload_work_package(
-                creation_data, auth_context, user_id, box_id
-            )
-        else:
-            access_error = self.WorkPackageAccessError("Unsupported work type")
-            log.error(access_error, extra={"work_type": work_type})
-            raise access_error
 
     async def _create_download_work_package(
         self,
