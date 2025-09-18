@@ -184,6 +184,23 @@ class ResearchDataUploadBox(BaseDto):
     )
 
 
+def validate_work_package_data(data):
+    """Ensure exactly one of dataset_id or box_id is provided based on work type."""
+    errors: list[str] = []
+    if data.type == WorkPackageType.DOWNLOAD:
+        if not data.dataset_id:
+            errors.append("dataset_id is required for download work packages")
+        if data.box_id:
+            errors.append("box_id shouldn't be provided for download work packages")
+    elif data.type == WorkPackageType.UPLOAD:
+        if not data.box_id:
+            errors.append("box_id is required for upload work packages")
+        if data.dataset_id:
+            errors.append("dataset_id shouldn't be provided for upload work packages")
+    if errors:
+        raise ValueError("; ".join(errors))
+
+
 class WorkPackageCreationData(BaseDto):
     """All data necessary to create a work package."""
 
@@ -213,22 +230,7 @@ class WorkPackageCreationData(BaseDto):
     @model_validator(mode="after")
     def validate_ids(self):
         """Ensure exactly one of dataset_id or box_id is provided based on work type."""
-        errors: list[str] = []
-        if self.type == WorkPackageType.DOWNLOAD:
-            if not self.dataset_id:
-                errors.append("dataset_id is required for download work packages")
-            if self.box_id:
-                errors.append("box_id shouldn't be provided for download work packages")
-        elif self.type == WorkPackageType.UPLOAD:
-            if not self.box_id:
-                errors.append("box_id is required for upload work packages")
-            if self.dataset_id:
-                errors.append(
-                    "dataset_id shouldn't be provided for upload work packages"
-                )
-        if errors:
-            raise ValueError("; ".join(errors))
-
+        validate_work_package_data(self)
         return self
 
 
@@ -287,6 +289,12 @@ class WorkPackage(WorkPackageDetails):
         default=...,
         description="Hash of the work package access token",
     )
+
+    @model_validator(mode="after")
+    def validate_ids(self):
+        """Ensure exactly one of dataset_id or box_id is provided based on work type."""
+        validate_work_package_data(self)
+        return self
 
 
 class WorkOrderTokenRequest(BaseModel):

@@ -283,39 +283,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             id=str(work_package.id), token=encrypted_token, expires=expires
         )
 
-    def _validate_work_package(self, work_package: WorkPackage):
-        """Validate certain work package details.
-
-        Raises a WorkPackageAccessError in the following cases:
-        - the work package has expired
-        - the work package is for download and the dataset ID is missing
-        - the work package is for upload and the box ID is missing
-        """
-        extra = {"work_package_id": work_package.id}  # only used for logging
-        if not work_package.created <= now_utc_ms_prec() < work_package.expires:
-            access_error = self.WorkPackageAccessError("Work package has expired")
-            log.error(access_error, extra=extra)
-            raise access_error
-
-        dataset_id = work_package.dataset_id
-        if work_package.type == WorkPackageType.DOWNLOAD and not dataset_id:
-            access_error = self.WorkPackageAccessError(
-                "Invalid download work package: missing dataset_id"
-            )
-            log.error(access_error, extra=extra)
-            raise access_error
-        elif work_package.type == WorkPackageType.UPLOAD and not work_package.box_id:
-            access_error = self.WorkPackageAccessError(
-                "Invalid upload work package: missing box_id"
-            )
-            log.error(access_error, extra=extra)
-            raise access_error
-
-        if work_package.type not in (WorkPackageType.DOWNLOAD, WorkPackageType.UPLOAD):
-            access_error = self.WorkPackageAccessError("Unsupported work type")
-            log.error(access_error, extra=extra)
-            raise access_error
-
     async def get(
         self,
         work_package_id: UUID,
@@ -351,8 +318,11 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise access_error
 
         if check_valid:
-            self._validate_work_package(work_package)
-
+            extra = {"work_package_id": work_package.id}  # only used for logging
+            if not work_package.created <= now_utc_ms_prec() < work_package.expires:
+                access_error = self.WorkPackageAccessError("Work package has expired")
+                log.error(access_error, extra=extra)
+                raise access_error
             # Check access based on work package type
             if work_package.type == WorkPackageType.DOWNLOAD:
                 has_access = await self._access.check_download_access(
