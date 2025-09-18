@@ -37,11 +37,11 @@ from wps.core.models import (
     DownloadWorkOrder,
     ResearchDataUploadBox,
     UploadFileWorkOrder,
+    UploadPathType,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
     WorkPackageType,
-    WorkType,
 )
 from wps.core.tokens import (
     generate_work_package_access_token,
@@ -391,7 +391,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise access_error
 
         wot = DownloadWorkOrder(
-            work_type="download",
             file_id=file_id,
             user_public_crypt4gh_key=work_package.user_public_crypt4gh_key,
         )
@@ -402,7 +401,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self,
         *,
         work_package_id: UUID4,
-        work_type: WorkType,
+        work_type: UploadPathType,
         box_id: UUID4,
         alias: str | None = None,
         file_id: UUID4 | None = None,
@@ -452,34 +451,20 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
         match work_type:
             case "create":
-                if not alias:
-                    access_error = self.WorkPackageAccessError(
-                        "Alias must be provided for file creation WOTs"
-                    )
-                    log.error(access_error, extra=extra)
-                    raise access_error
                 work_order = CreateFileWorkOrder(
-                    work_type=work_type,
-                    alias=alias,
+                    alias=alias,  # type: ignore
                     box_id=file_upload_box_id,
                     user_public_crypt4gh_key=user_public_crypt4gh_key,
                 )
                 signed_wot = sign_work_order_token(work_order, self._signing_key)
             case "upload" | "close" | "delete":
-                if not file_id:
-                    access_error = self.WorkPackageAccessError(
-                        "File ID must be provided for file upload WOTs"
-                    )
-                    log.error(access_error, extra=extra)
-                    raise access_error
                 work_order = WORK_TYPE_TO_MODEL[work_type](
-                    work_type=work_type,  # type: ignore
                     box_id=file_upload_box_id,
-                    file_id=file_id,
+                    file_id=file_id,  # type: ignore
                     user_public_crypt4gh_key=user_public_crypt4gh_key,
                 )
                 signed_wot = sign_work_order_token(work_order, self._signing_key)
-            case _:
+            case _:  # pragma: no cover
                 access_error = self.WorkPackageAccessError(
                     f"Unsupported Work Order Token type: {work_type}"
                 )

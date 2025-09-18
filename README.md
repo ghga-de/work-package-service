@@ -126,9 +126,9 @@ The service requires the following configuration parameters:
 
 - <a id="properties/datasets_collection"></a>**`datasets_collection`** *(string)*: The name of the database collection for datasets. Default: `"datasets"`.
 
-- <a id="properties/work_packages_collection"></a>**`work_packages_collection`** *(string)*: The name of the database collection for work packages. Default: `"workPackages"`.
-
 - <a id="properties/upload_boxes_collection"></a>**`upload_boxes_collection`** *(string)*: The name of the database collection for upload boxes. Default: `"uploadBoxes"`.
+
+- <a id="properties/work_packages_collection"></a>**`work_packages_collection`** *(string)*: The name of the database collection for work packages. Default: `"workPackages"`.
 
 - <a id="properties/work_package_valid_days"></a>**`work_package_valid_days`** *(integer)*: How many days a work package (and its access token) stays valid. Default: `30`.
 

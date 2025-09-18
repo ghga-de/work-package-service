@@ -125,18 +125,8 @@ components:
       - title
       title: ResearchDataUploadBox
       type: object
-    WOTWorkType:
-      description: The type of work that a work order token authorizes.
-      enum:
-      - create
-      - upload
-      - close
-      - delete
-      - download
-      title: WOTWorkType
-      type: string
-    WorkOrderTokenRequest:
-      description: Request model for creating work order tokens.
+    UploadWorkOrderTokenRequest:
+      description: Request model for creating upload-path work order tokens.
       properties:
         alias:
           anyOf:
@@ -152,11 +142,20 @@ components:
           description: File ID (required for UPLOAD, CLOSE, DELETE work types)
           title: File Id
         work_type:
-          $ref: '#/components/schemas/WOTWorkType'
+          anyOf:
+          - const: create
+            type: string
+          - const: upload
+            type: string
+          - const: close
+            type: string
+          - const: delete
+            type: string
           description: The type of work order token to create
+          title: Work Type
       required:
       - work_type
-      title: WorkOrderTokenRequest
+      title: UploadWorkOrderTokenRequest
       type: object
     WorkPackageCreationData:
       additionalProperties: false
@@ -422,7 +421,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WorkOrderTokenRequest'
+              $ref: '#/components/schemas/UploadWorkOrderTokenRequest'
         required: true
       responses:
         '201':

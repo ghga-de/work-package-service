@@ -25,10 +25,10 @@ from wps.core.models import (
     Dataset,
     DatasetWithExpiration,
     ResearchDataUploadBox,
+    UploadPathType,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
-    WorkType,
 )
 
 
@@ -92,7 +92,7 @@ class WorkPackageRepositoryPort(ABC):
         self,
         *,
         work_package_id: UUID4,
-        work_type: WorkType,
+        work_type: UploadPathType,
         box_id: UUID4,
         alias: str | None = None,
         file_id: UUID4 | None = None,

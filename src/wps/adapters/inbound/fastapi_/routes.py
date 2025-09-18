@@ -29,7 +29,7 @@ from wps.core.models import (
     Dataset,
     DatasetWithExpiration,
     ResearchDataUploadBox,
-    WorkOrderTokenRequest,
+    UploadWorkOrderTokenRequest,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
     WorkPackageDetails,
@@ -186,7 +186,7 @@ async def create_download_work_order_token(
 async def create_upload_work_order_token(
     work_package_id: UUID4,
     box_id: UUID4,
-    wot_request: WorkOrderTokenRequest,
+    wot_request: UploadWorkOrderTokenRequest,
     repository: WorkPackageRepositoryDummy,
     work_package_access_token: WorkPackageAccessToken,
 ):

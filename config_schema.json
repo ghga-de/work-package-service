@@ -72,16 +72,16 @@
       "title": "Datasets Collection",
       "type": "string"
     },
-    "work_packages_collection": {
-      "default": "workPackages",
-      "description": "The name of the database collection for work packages",
-      "title": "Work Packages Collection",
-      "type": "string"
-    },
     "upload_boxes_collection": {
       "default": "uploadBoxes",
       "description": "The name of the database collection for upload boxes",
       "title": "Upload Boxes Collection",
+      "type": "string"
+    },
+    "work_packages_collection": {
+      "default": "workPackages",
+      "description": "The name of the database collection for work packages",
+      "title": "Work Packages Collection",
       "type": "string"
     },
     "work_package_valid_days": {

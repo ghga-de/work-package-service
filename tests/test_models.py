@@ -24,6 +24,7 @@ from pydantic import ValidationError
 
 from wps.core.models import (
     DownloadWorkOrder,
+    UploadWorkOrderTokenRequest,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageType,
@@ -32,10 +33,25 @@ from wps.core.models import (
 from .fixtures.crypt import user_public_crypt4gh_key
 
 
+def test_upload_wot_request_model():
+    """Test validation for the UploadWorkOrderTokenRequest model"""
+    _ = UploadWorkOrderTokenRequest(work_type="create", alias="test", file_id=None)
+    _ = UploadWorkOrderTokenRequest(work_type="upload", alias=None, file_id=uuid4())
+    _ = UploadWorkOrderTokenRequest(work_type="close", alias=None, file_id=uuid4())
+    _ = UploadWorkOrderTokenRequest(work_type="delete", alias=None, file_id=uuid4())
+
+    for work_type in ["create", "close", "upload", "delete"]:
+        with pytest.raises(ValueError):
+            _ = UploadWorkOrderTokenRequest(
+                work_type=work_type,  # type: ignore
+                alias=None,
+                file_id=None,
+            )
+
+
 def test_work_order_token():
     """Test instantiating a work order token model."""
     token = DownloadWorkOrder(
-        work_type="download",
         file_id="some-file-id",
         user_public_crypt4gh_key="some-public-key",
     )

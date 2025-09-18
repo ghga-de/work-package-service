@@ -18,7 +18,7 @@ in the API.
 """
 
 from enum import StrEnum
-from typing import Literal, TypeVar
+from typing import Literal
 
 from ghga_service_commons.utils.utc_dates import UTCDatetime
 from hexkit.protocols.dao import UUID4Field
@@ -41,7 +41,8 @@ __all__ = [
     "DeleteFileWorkOrder",
     "ResearchDataUploadBox",
     "UploadFileWorkOrder",
-    "WorkOrderTokenRequest",
+    "UploadPathType",
+    "UploadWorkOrderTokenRequest",
     "WorkPackage",
     "WorkPackageCreationData",
     "WorkPackageCreationResponse",
@@ -90,28 +91,33 @@ class DatasetWithExpiration(Dataset):
     )
 
 
-WorkType = Literal["create", "upload", "close", "delete", "download"]
+DownloadType = Literal["download"]
+CreateType = Literal["create"]
+UploadType = Literal["upload"]
+CloseType = Literal["close"]
+DeleteType = Literal["delete"]
+UploadPathType = CreateType | UploadType | CloseType | DeleteType
+WorkType = UploadPathType | DownloadType
 
-T = TypeVar("T", bound=WorkType)
 
-
-class BaseWorkOrderToken[T: WorkType](BaseModel):
+class BaseWorkOrderToken(BaseModel):
     """Base model for work order tokens."""
 
-    work_type: T
     user_public_crypt4gh_key: str
     model_config = ConfigDict(frozen=True)
 
 
-class DownloadWorkOrder(BaseWorkOrderToken[Literal["download"]]):
+class DownloadWorkOrder(BaseWorkOrderToken):
     """WOT schema authorizing a user to download a file from a dataset"""
 
+    work_type: DownloadType = "download"
     file_id: str  # should be the file accession, as opposed to UUID4 used for uploads
 
 
-class CreateFileWorkOrder(BaseWorkOrderToken[Literal["create"]]):
+class CreateFileWorkOrder(BaseWorkOrderToken):
     """WOT schema authorizing a user to create a new FileUpload"""
 
+    work_type: CreateType = "create"
     alias: str
     box_id: UUID4
 
@@ -126,16 +132,22 @@ class _FileUploadToken(BaseModel):
     box_id: UUID4
 
 
-class UploadFileWorkOrder(BaseWorkOrderToken[Literal["upload"]], _FileUploadToken):
+class UploadFileWorkOrder(BaseWorkOrderToken, _FileUploadToken):
     """WOT schema authorizing a user to get a file part upload URL"""
 
+    work_type: UploadType = "upload"
 
-class CloseFileWorkOrder(BaseWorkOrderToken[Literal["close"]], _FileUploadToken):
+
+class CloseFileWorkOrder(BaseWorkOrderToken, _FileUploadToken):
     """WOT schema authorizing a user to complete a file upload"""
 
+    work_type: CloseType = "close"
 
-class DeleteFileWorkOrder(BaseWorkOrderToken[Literal["delete"]], _FileUploadToken):
+
+class DeleteFileWorkOrder(BaseWorkOrderToken, _FileUploadToken):
     """WOT schema authorizing a user to delete a file upload"""
+
+    work_type: DeleteType = "delete"
 
 
 # TODO: reference the event schema once this is moved there. for now, mark with '_'
@@ -297,10 +309,10 @@ class WorkPackage(WorkPackageDetails):
         return self
 
 
-class WorkOrderTokenRequest(BaseModel):
-    """Request model for creating work order tokens."""
+class UploadWorkOrderTokenRequest(BaseModel):
+    """Request model for creating upload-path work order tokens."""
 
-    work_type: WorkType = Field(
+    work_type: UploadPathType = Field(
         ..., description="The type of work order token to create"
     )
     alias: str | None = Field(
@@ -309,3 +321,14 @@ class WorkOrderTokenRequest(BaseModel):
     file_id: UUID4 | None = Field(
         None, description="File ID (required for UPLOAD, CLOSE, DELETE work types)"
     )
+
+    @model_validator(mode="after")
+    def validate_parameters_and_work_type(self):
+        """Ensure proper params are supplied given work type."""
+        if self.work_type == "create" and not self.alias:
+            raise ValueError("File alias is required for CREATE work type")
+        elif self.work_type != "create" and not self.file_id:
+            raise ValueError(
+                "File alias is required for UPLOAD, CLOSE, DELETE work types"
+            )
+        return self
