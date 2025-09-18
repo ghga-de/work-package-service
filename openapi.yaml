@@ -1,5 +1,44 @@
 components:
   schemas:
+    BoxWithExpiration:
+      additionalProperties: false
+      description: A model describing a research data upload box with an expiration
+        date.
+      properties:
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: The description of the upload box.
+          title: Description
+        expires:
+          description: The expiration date of access to the research data upload box.
+          format: date-time
+          title: Expires
+          type: string
+        file_upload_box_id:
+          description: The ID of the file upload box. This is the ID referenced by
+            the Connector.
+          format: uuid4
+          title: File Upload Box Id
+          type: string
+        id:
+          description: The ID of the full research data upload box. This is the ID
+            tied to upload claims.
+          format: uuid4
+          title: Id
+          type: string
+        title:
+          description: The title of the upload box.
+          title: Title
+          type: string
+      required:
+      - id
+      - file_upload_box_id
+      - title
+      - expires
+      title: BoxWithExpiration
+      type: object
     Dataset:
       additionalProperties: false
       description: A model describing a dataset.
@@ -92,38 +131,6 @@ components:
       - files
       - expires
       title: DatasetWithExpiration
-      type: object
-    ResearchDataUploadBox:
-      additionalProperties: false
-      description: A model describing an upload box that groups file uploads.
-      properties:
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: The description of the upload box.
-          title: Description
-        file_upload_box_id:
-          description: The ID of the file upload box. This is the ID referenced by
-            the Connector.
-          format: uuid4
-          title: File Upload Box Id
-          type: string
-        id:
-          description: The ID of the full research data upload box. This is the ID
-            tied to upload claims.
-          format: uuid4
-          title: Id
-          type: string
-        title:
-          description: The title of the upload box.
-          title: Title
-          type: string
-      required:
-      - id
-      - file_upload_box_id
-      - title
-      title: ResearchDataUploadBox
       type: object
     UploadWorkOrderTokenRequest:
       description: Request model for creating upload-path work order tokens.
@@ -280,7 +287,7 @@ paths:
   /users/{user_id}/boxes:
     get:
       description: Endpoint used to get details for all upload boxes that are accessible
-        to the given user.
+        to the given user, along with the access expiration date.
       operationId: get_upload_boxes
       parameters:
       - in: path
@@ -296,7 +303,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ResearchDataUploadBox'
+                  $ref: '#/components/schemas/BoxWithExpiration'
                 title: Response 200 Get Upload Boxes
                 type: array
           description: Upload boxes have been fetched.
@@ -306,7 +313,7 @@ paths:
           description: Validation error in submitted user data.
       security:
       - HTTPBearer: []
-      summary: Get all upload boxes of the given user
+      summary: Get all accessible upload boxes and access expiry for the given user
       tags:
       - UploadBoxes
       - upload

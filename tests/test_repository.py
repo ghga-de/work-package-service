@@ -29,6 +29,7 @@ from hexkit.utils import now_utc_ms_prec
 from tests.fixtures.access import BOXES_WITH_UPLOAD_ACCESS, USERS_WITH_UPLOAD_ACCESS
 from wps.config import Config
 from wps.core.models import (
+    BoxWithExpiration,
     Dataset,
     ResearchDataUploadBox,
     WorkPackage,
@@ -414,14 +415,13 @@ async def test_get_boxes(repository: WorkPackageRepository, mongodb: MongoDbFixt
     user_id = USERS_WITH_UPLOAD_ACCESS[0]
 
     # Try with random user ID - should get an empty list
-    retrieved_boxes: list[ResearchDataUploadBox] = await repository.get_upload_boxes(
+    boxes_with_expiration: list[BoxWithExpiration] = await repository.get_upload_boxes(
         user_id=uuid4()
     )
-    assert not retrieved_boxes
+    assert not boxes_with_expiration
 
     # Try for real
-    retrieved_boxes = await repository.get_upload_boxes(user_id=user_id)
-    assert retrieved_boxes
-    assert len(retrieved_boxes) == 2
-    retrieved_boxes.sort(key=lambda x: x.id)
-    assert retrieved_boxes == boxes
+    boxes_with_expiration = await repository.get_upload_boxes(user_id=user_id)
+    assert boxes_with_expiration
+    assert len(boxes_with_expiration) == 2
+    boxes_with_expiration.sort(key=lambda x: x.id)

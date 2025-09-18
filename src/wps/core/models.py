@@ -36,6 +36,7 @@ from wps.core.crypt import validate_public_key
 
 __all__ = [
     "BaseWorkOrderToken",
+    "BoxWithExpiration",
     "CloseFileWorkOrder",
     "CreateFileWorkOrder",
     "DeleteFileWorkOrder",
@@ -193,6 +194,15 @@ class ResearchDataUploadBox(BaseDto):
     title: str = Field(..., description="The title of the upload box.")
     description: str | None = Field(
         None, description="The description of the upload box."
+    )
+
+
+class BoxWithExpiration(ResearchDataUploadBox):
+    """A model describing a research data upload box with an expiration date."""
+
+    expires: UTCDatetime = Field(
+        default=...,
+        description="The expiration date of access to the research data upload box.",
     )
 
 

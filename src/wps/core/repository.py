@@ -29,6 +29,7 @@ from pydantic import UUID4, Field, SecretStr
 from pydantic_settings import BaseSettings
 
 from wps.core.models import (
+    BoxWithExpiration,
     CloseFileWorkOrder,
     CreateFileWorkOrder,
     Dataset,
@@ -562,8 +563,10 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(error, extra={"box_id": box_id})
             raise error from err
 
-    async def get_upload_boxes(self, *, user_id: UUID4) -> list[ResearchDataUploadBox]:
-        """Get the list of all upload boxes accessible to the authenticated user."""
+    async def get_upload_boxes(self, *, user_id: UUID4) -> list[BoxWithExpiration]:
+        """Get the list of all upload boxes accessible to the authenticated user
+        along with access expiry.
+        """
         # Get accessible upload boxes from access service
         box_id_to_expiration = await self._access.get_accessible_boxes_with_expiration(
             user_id
@@ -574,14 +577,14 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             user_id,
         )
 
-        upload_boxes: list[ResearchDataUploadBox] = []
-        now = now_utc_ms_prec()
+        upload_boxes: list[BoxWithExpiration] = []
         for box_id, expiration in box_id_to_expiration.items():
-            if expiration <= now:
-                continue
             try:
                 upload_box = await self.get_upload_box(box_id)
-                upload_boxes.append(upload_box)
+                box_with_expiration = BoxWithExpiration(
+                    **upload_box.model_dump(), expires=expiration
+                )
+                upload_boxes.append(box_with_expiration)
             except self.UploadBoxNotFoundError:
                 log.debug("Upload box '%s' not found, continuing...", box_id)
                 continue

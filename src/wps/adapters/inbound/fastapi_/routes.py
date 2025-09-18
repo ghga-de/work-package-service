@@ -26,9 +26,9 @@ from wps.adapters.inbound.fastapi_.auth import UserAuthContext, WorkPackageAcces
 from wps.adapters.inbound.fastapi_.dummies import WorkPackageRepositoryDummy
 from wps.constants import TRACER, WORK_ORDER_TOKEN_VALID_SECONDS
 from wps.core.models import (
+    BoxWithExpiration,
     Dataset,
     DatasetWithExpiration,
-    ResearchDataUploadBox,
     UploadWorkOrderTokenRequest,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
@@ -251,12 +251,12 @@ async def get_datasets(
     "/users/{user_id}/boxes",
     operation_id="get_upload_boxes",
     tags=["UploadBoxes", "upload"],
-    summary="Get all upload boxes of the given user",
+    summary="Get all accessible upload boxes and access expiry for the given user",
     description="Endpoint used to get details for all upload boxes"
-    + " that are accessible to the given user.",
+    + " that are accessible to the given user, along with the access expiration date.",
     responses={
         200: {
-            "model": list[ResearchDataUploadBox],
+            "model": list[BoxWithExpiration],
             "description": "Upload boxes have been fetched.",
         },
         403: {"description": "Not authorized to get upload boxes."},
@@ -269,14 +269,14 @@ async def get_upload_boxes(
     user_id: UUID4,
     repository: WorkPackageRepositoryDummy,
     auth_context: UserAuthContext,
-) -> list[ResearchDataUploadBox]:
+) -> list[BoxWithExpiration]:
     """Get upload boxes using an internal auth token with a user context."""
     try:
         if str(user_id) != auth_context.id:
             raise repository.WorkPackageAccessError(
                 "Not authorized to get upload boxes"
             )
-        upload_boxes = await repository.get_upload_boxes(user_id=user_id)
+        boxes_with_expiration = await repository.get_upload_boxes(user_id=user_id)
     except repository.WorkPackageAccessError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error
-    return upload_boxes
+    return boxes_with_expiration

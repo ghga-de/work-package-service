@@ -22,6 +22,7 @@ from ghga_service_commons.auth.ghga import AuthContext
 from pydantic import UUID4
 
 from wps.core.models import (
+    BoxWithExpiration,
     Dataset,
     DatasetWithExpiration,
     ResearchDataUploadBox,
@@ -151,5 +152,7 @@ class WorkPackageRepositoryPort(ABC):
         """
 
     @abstractmethod
-    async def get_upload_boxes(self, *, user_id: UUID4) -> list[ResearchDataUploadBox]:
-        """Get the list of all upload boxes accessible to the authenticated user."""
+    async def get_upload_boxes(self, *, user_id: UUID4) -> list[BoxWithExpiration]:
+        """Get the list of all upload boxes accessible to the authenticated user
+        along with access expiry.
+        """
