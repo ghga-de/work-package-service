@@ -439,7 +439,6 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         )
 
         extra["work_package_type"] = work_package.type
-        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
 
         # Retrieve the ResearchDataUploadBox in order to get its FileUploadBox ID
         try:
@@ -450,6 +449,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             raise access_error from err
         file_upload_box_id = research_data_upload_box.file_upload_box_id
 
+        user_public_crypt4gh_key = work_package.user_public_crypt4gh_key
         match work_type:
             case "create":
                 work_order = CreateFileWorkOrder(
@@ -457,20 +457,19 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                     box_id=file_upload_box_id,
                     user_public_crypt4gh_key=user_public_crypt4gh_key,
                 )
-                signed_wot = sign_work_order_token(work_order, self._signing_key)
             case "upload" | "close" | "delete":
                 work_order = WORK_TYPE_TO_MODEL[work_type](
                     box_id=file_upload_box_id,
                     file_id=file_id,  # type: ignore
                     user_public_crypt4gh_key=user_public_crypt4gh_key,
                 )
-                signed_wot = sign_work_order_token(work_order, self._signing_key)
             case _:  # pragma: no cover
                 access_error = self.WorkPackageAccessError(
                     f"Unsupported Work Order Token type: {work_type}"
                 )
                 log.error(access_error, extra=extra)
                 raise access_error
+        signed_wot = sign_work_order_token(work_order, self._signing_key)
         return encrypt(signed_wot, user_public_crypt4gh_key)
 
     async def register_dataset(self, dataset: Dataset) -> None:
