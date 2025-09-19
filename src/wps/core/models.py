@@ -92,13 +92,13 @@ class DatasetWithExpiration(Dataset):
     )
 
 
-DownloadType = Literal["download"]
+DownloadPathType = Literal["download"]
 CreateType = Literal["create"]
 UploadType = Literal["upload"]
 CloseType = Literal["close"]
 DeleteType = Literal["delete"]
 UploadPathType = CreateType | UploadType | CloseType | DeleteType
-WorkType = UploadPathType | DownloadType
+WorkType = UploadPathType | DownloadPathType
 
 
 class BaseWorkOrderToken(BaseModel):
@@ -111,7 +111,7 @@ class BaseWorkOrderToken(BaseModel):
 class DownloadWorkOrder(BaseWorkOrderToken):
     """WOT schema authorizing a user to download a file from a dataset"""
 
-    work_type: DownloadType = "download"
+    work_type: DownloadPathType = "download"
     file_id: str  # should be the file accession, as opposed to UUID4 used for uploads
 
 
