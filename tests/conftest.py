@@ -39,8 +39,10 @@ from .fixtures.datasets import DATASET
 def mongodb_populated_fixture(
     mongodb: MongoDbFixture, config: Config
 ) -> MongoDbFixture:
-    """MongoDB Fixture with a database populated with one dataset."""
+    """MongoDB Fixture with a database populated with one dataset and one upload box."""
     database = mongodb.client.get_database(config.db_name)
+
+    # Insert a dataset into the database
     dataset_collection = database.get_collection(config.datasets_collection)
     dataset = DATASET.model_dump()
     dataset["_id"] = dataset.pop("id")

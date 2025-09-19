@@ -335,6 +335,8 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                     work_package.user_id,
                     work_package.box_id,  # type: ignore
                 )
+            else:  # pragma: no cover
+                has_access = False
 
             if not has_access:
                 access_error = self.WorkPackageAccessError(
