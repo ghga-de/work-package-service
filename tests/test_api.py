@@ -32,8 +32,7 @@ from wps.constants import WORK_ORDER_TOKEN_VALID_SECONDS
 from wps.core.models import DatasetWithExpiration
 
 from .fixtures import (  # noqa: F401
-    AUTH_CLAIMS,
-    FILE_UPLOAD_BOX_ID,
+    FILE_BOX_ID,
     RDU_BOX_ID,
     SIGNING_KEY_PAIR,
     USER_ID,
@@ -296,7 +295,7 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "create"
     assert wot_dict["alias"] == "test-file"
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
-    assert wot_dict["box_id"] == FILE_UPLOAD_BOX_ID
+    assert wot_dict["box_id"] == FILE_BOX_ID
 
     # Test UPLOAD work order token
     test_file_id = str(uuid4())
@@ -313,7 +312,7 @@ async def test_make_upload_work_order_token(
     wot_dict = decode_and_validate_token(decrypted_wot, SIGNING_KEY_PAIR.public())
     assert wot_dict["work_type"] == "upload"
     assert wot_dict["file_id"] == test_file_id
-    assert wot_dict["box_id"] == FILE_UPLOAD_BOX_ID
+    assert wot_dict["box_id"] == FILE_BOX_ID
 
     # Test CLOSE work order token
     close_request = {"work_type": "close", "file_id": test_file_id}
@@ -330,7 +329,7 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "close"
     assert wot_dict["file_id"] == test_file_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
-    assert wot_dict["box_id"] == FILE_UPLOAD_BOX_ID
+    assert wot_dict["box_id"] == FILE_BOX_ID
 
     # Test DELETE work order token
     delete_file_id = str(uuid4())
@@ -349,7 +348,7 @@ async def test_make_upload_work_order_token(
     assert wot_dict["work_type"] == "delete"
     assert wot_dict["file_id"] == delete_file_id
     assert wot_dict["user_public_crypt4gh_key"] == user_public_crypt4gh_key
-    assert wot_dict["box_id"] == FILE_UPLOAD_BOX_ID
+    assert wot_dict["box_id"] == FILE_BOX_ID
 
     # Test unauthorized access (wrong work package)
     response = await client.post(

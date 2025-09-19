@@ -69,7 +69,7 @@ AUTH_CLAIMS = {
 
 USER_ID = AUTH_CLAIMS["id"]
 RDU_BOX_ID = "91ba4d24-0bb6-4dd4-b80d-b0cf2421fb79"
-FILE_UPLOAD_BOX_ID = "2d1b33e4-8942-447a-934f-f7a93d95f7e3"
+FILE_BOX_ID = "2d1b33e4-8942-447a-934f-f7a93d95f7e3"
 
 
 def headers_for_token(token: str) -> dict[str, str]:

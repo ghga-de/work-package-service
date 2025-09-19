@@ -29,7 +29,7 @@ from hexkit.providers.mongodb.testutils import (  # noqa: F401
     mongodb_fixture,
 )
 
-from tests.fixtures import FILE_UPLOAD_BOX_ID, RDU_BOX_ID
+from tests.fixtures import FILE_BOX_ID, RDU_BOX_ID
 from wps.config import Config
 
 from .fixtures.datasets import DATASET
@@ -49,7 +49,7 @@ def mongodb_populated_fixture(
     # Insert an upload box into the database
     upload_box = {
         "_id": UUID(RDU_BOX_ID),
-        "file_upload_box_id": UUID(FILE_UPLOAD_BOX_ID),
+        "file_upload_box_id": UUID(FILE_BOX_ID),
         "title": "Test Upload Box",
         "description": "Box for testing expired access",
     }
