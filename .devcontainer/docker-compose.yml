@@ -28,7 +28,7 @@ services:
       WPS_CONFIG_YAML: /workspace/.devcontainer/.dev_config.yaml
 
   mongodb:
-    image: mongo:7.0.7
+    image: mongo:8.0.14
     restart: unless-stopped
     volumes:
       - mongo_fs:/data/db
