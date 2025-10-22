@@ -274,10 +274,13 @@ class WorkPackageDetails(BaseModel):
     """Details about the work package that can be requested."""
 
     type: WorkPackageType
-    files: dict[str, str] = Field(
-        default=...,
+    files: dict[str, str] | None = Field(
+        default=None,
         description="IDs of all included files mapped to their file extensions",
         examples=[{"file-id-1": ".json", "file-id-2": ".csv"}],
+    )
+    box_id: UUID4 | None = Field(
+        default=None, description="ID of the upload box (for upload work packages)"
     )
     created: UTCDatetime = Field(
         default=..., description="Creation date of the work package"
