@@ -276,7 +276,8 @@ class WorkPackageDetails(BaseModel):
     type: WorkPackageType
     files: dict[str, str] | None = Field(
         default=None,
-        description="IDs of all included files mapped to their file extensions",
+        description="IDs of all included files mapped to their file extensions (None"
+        + " for upload work packages)",
         examples=[{"file-id-1": ".json", "file-id-2": ".csv"}],
     )
     box_id: UUID4 | None = Field(
