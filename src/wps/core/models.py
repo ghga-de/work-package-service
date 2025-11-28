@@ -44,6 +44,7 @@ __all__ = [
     "UploadFileWorkOrder",
     "UploadPathType",
     "UploadWorkOrderTokenRequest",
+    "ViewFileBoxWorkOrder",
     "WorkPackage",
     "WorkPackageCreationData",
     "WorkPackageCreationResponse",
@@ -97,7 +98,8 @@ CreateType = Literal["create"]
 UploadType = Literal["upload"]
 CloseType = Literal["close"]
 DeleteType = Literal["delete"]
-UploadPathType = CreateType | UploadType | CloseType | DeleteType
+ViewType = Literal["view"]
+UploadPathType = CreateType | UploadType | CloseType | DeleteType | ViewType
 WorkType = UploadPathType | DownloadPathType
 
 
@@ -113,6 +115,13 @@ class DownloadWorkOrder(BaseWorkOrderToken):
 
     work_type: DownloadPathType = "download"
     file_id: str  # should be the file accession, as opposed to UUID4 used for uploads
+
+
+class ViewFileBoxWorkOrder(BaseWorkOrderToken):
+    """WOT schema authorizing a user to view a FileUploadBox"""
+
+    work_type: ViewType = "view"
+    box_id: UUID4
 
 
 class CreateFileWorkOrder(BaseWorkOrderToken):
