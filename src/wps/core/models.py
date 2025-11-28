@@ -151,34 +151,6 @@ class DeleteFileWorkOrder(BaseWorkOrderToken, _FileUploadToken):
     work_type: DeleteType = "delete"
 
 
-# TODO: reference the event schema once this is moved there. for now, mark with '_'
-class _ResearchDataUploadBoxState(StrEnum):
-    """The allowed states for an ResearchDataUploadBox instance"""
-
-    OPEN = "open"
-    LOCKED = "locked"
-    CLOSED = "closed"
-
-
-class _ResearchDataUploadBox(BaseModel):
-    """A class representing a ResearchDataUploadBox.
-
-    Contains all fields from the FileUploadBox and shares IDs.
-    """
-
-    id: UUID4  # unique identifier for the instance
-    file_upload_box_id: UUID4  # ID of the FileUploadBox in the UCS
-    locked: bool = False  # Whether or not changes to the files in the box are allowed
-    file_count: int = 0  # The number of files in the box
-    size: int = 0  # The total size of all files in the box
-    storage_alias: str  # Storage alias assigned to the FileUploadBox
-    state: _ResearchDataUploadBoxState  # one of OPEN, LOCKED, CLOSED
-    title: str  # short meaningful name for the box
-    description: str  # describes the upload box in more detail
-    last_changed: UTCDatetime
-    changed_by: UUID4  # ID of the user who performed the latest change
-
-
 class SlimResearchDataUploadBox(BaseDto):
     """A model describing an upload box that groups file uploads.
 
