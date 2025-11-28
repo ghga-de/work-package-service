@@ -40,7 +40,7 @@ __all__ = [
     "CloseFileWorkOrder",
     "CreateFileWorkOrder",
     "DeleteFileWorkOrder",
-    "ResearchDataUploadBox",
+    "SlimResearchDataUploadBox",
     "UploadFileWorkOrder",
     "UploadPathType",
     "UploadWorkOrderTokenRequest",
@@ -179,8 +179,12 @@ class _ResearchDataUploadBox(BaseModel):
     changed_by: UUID4  # ID of the user who performed the latest change
 
 
-class ResearchDataUploadBox(BaseDto):
-    """A model describing an upload box that groups file uploads."""
+class SlimResearchDataUploadBox(BaseDto):
+    """A model describing an upload box that groups file uploads.
+
+    This model contains a selected subset of the fields from the shared model
+    ResearchDataUploadBox, which is defined in ghga-event-schemas.
+    """
 
     id: UUID4 = Field(
         ...,
@@ -197,7 +201,7 @@ class ResearchDataUploadBox(BaseDto):
     )
 
 
-class BoxWithExpiration(ResearchDataUploadBox):
+class BoxWithExpiration(SlimResearchDataUploadBox):
     """A model describing a research data upload box with an expiration date."""
 
     expires: UTCDatetime = Field(

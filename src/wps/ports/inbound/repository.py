@@ -25,7 +25,7 @@ from wps.core.models import (
     BoxWithExpiration,
     Dataset,
     DatasetWithExpiration,
-    ResearchDataUploadBox,
+    SlimResearchDataUploadBox,
     UploadPathType,
     WorkPackage,
     WorkPackageCreationData,
@@ -137,7 +137,7 @@ class WorkPackageRepositoryPort(ABC):
         """
 
     @abstractmethod
-    async def register_upload_box(self, upload_box: ResearchDataUploadBox) -> None:
+    async def register_upload_box(self, upload_box: SlimResearchDataUploadBox) -> None:
         """Register an upload box."""
 
     @abstractmethod
@@ -145,7 +145,7 @@ class WorkPackageRepositoryPort(ABC):
         """Delete an upload box with the given ID."""
 
     @abstractmethod
-    async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBox:
+    async def get_upload_box(self, box_id: UUID4) -> SlimResearchDataUploadBox:
         """Get a registered upload box using the given ID.
 
         Raises an `UploadBoxNotFoundError` if no doc with the box_id exists.
