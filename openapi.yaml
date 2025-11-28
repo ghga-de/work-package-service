@@ -158,6 +158,8 @@ components:
             type: string
           - const: delete
             type: string
+          - const: view
+            type: string
           description: The type of work order token to create
           title: Work Type
       required:

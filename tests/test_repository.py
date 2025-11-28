@@ -65,7 +65,6 @@ async def test_work_package_and_token_creation(
     await repository.register_dataset(DATASET)
 
     # create work package for all files
-
     creation_data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
         type=WorkPackageType.DOWNLOAD,
@@ -90,7 +89,6 @@ async def test_work_package_and_token_creation(
     wpat = decrypt(encrypted_wpat)
 
     # retrieve work package
-
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get(
             work_package_id, check_valid=True, work_package_access_token="foo"
@@ -120,8 +118,7 @@ async def test_work_package_and_token_creation(
     assert package.token_hash == hash_token(wpat)
     assert (package.expires - package.created).days == valid_days
 
-    # crate work order token
-
+    # create work order token
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=uuid4(),
@@ -151,7 +148,6 @@ async def test_work_package_and_token_creation(
     assert wot is not None
 
     # check the content of the work order token
-
     wot = decrypt(wot)
     wot_claims = decode_and_validate_token(wot, SIGNING_KEY_PAIR.public())
     assert wot_claims.pop("exp") - wot_claims.pop("iat") == valid_days
@@ -162,7 +158,6 @@ async def test_work_package_and_token_creation(
     }
 
     # create another work package for specific files
-
     creation_data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
         type=WorkPackageType.DOWNLOAD,
@@ -179,7 +174,7 @@ async def test_work_package_and_token_creation(
     encrypted_wpat = creation_response.token
     wpat = decrypt(encrypted_wpat)
 
-    # crate work order token
+    # create work order token
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=work_package_id,
@@ -202,7 +197,6 @@ async def test_work_package_and_token_creation(
     assert wot is not None
 
     # check the content of the work order token
-
     wot = decrypt(wot)
     wot_claims = decode_and_validate_token(wot, SIGNING_KEY_PAIR.public())
     assert wot_claims.pop("exp") - wot_claims.pop("iat") == valid_days

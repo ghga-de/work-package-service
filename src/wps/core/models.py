@@ -324,6 +324,8 @@ class UploadWorkOrderTokenRequest(BaseModel):
     @model_validator(mode="after")
     def validate_parameters_and_work_type(self):
         """Ensure proper params are supplied given work type."""
+        if self.work_type == "view":
+            return self
         if self.work_type == "create" and not self.alias:
             raise ValueError("File alias is required for CREATE work type")
         elif self.work_type != "create" and not self.file_id:
