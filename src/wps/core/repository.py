@@ -466,7 +466,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                     user_public_crypt4gh_key=user_public_crypt4gh_key,
                 )
             case "view":
-                work_order = ViewFileBoxWorkOrder(
+                work_order = ViewFileBoxWorkOrder(  # type: ignore[assignment]
                     box_id=file_upload_box_id,
                     user_public_crypt4gh_key=user_public_crypt4gh_key,
                 )

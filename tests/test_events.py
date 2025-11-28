@@ -242,7 +242,7 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
         id=research_data_upload_box_id,
         title="Test Upload Box",
         description="A test upload box for testing outbox events",
-        state="open",  # type: ignore
+        state="open",
         file_upload_box_id=file_upload_box_id,
         storage_alias="test",
         changed_by=uuid4(),
