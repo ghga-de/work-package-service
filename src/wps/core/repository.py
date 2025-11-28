@@ -39,6 +39,7 @@ from wps.core.models import (
     SlimResearchDataUploadBox,
     UploadFileWorkOrder,
     UploadPathType,
+    ViewFileBoxWorkOrder,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
@@ -462,6 +463,11 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 work_order = WORK_TYPE_TO_MODEL[work_type](
                     box_id=file_upload_box_id,
                     file_id=file_id,  # type: ignore
+                    user_public_crypt4gh_key=user_public_crypt4gh_key,
+                )
+            case "view":
+                work_order = ViewFileBoxWorkOrder(
+                    box_id=file_upload_box_id,
                     user_public_crypt4gh_key=user_public_crypt4gh_key,
                 )
             case _:  # pragma: no cover
