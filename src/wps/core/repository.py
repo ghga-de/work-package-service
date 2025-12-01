@@ -36,7 +36,7 @@ from wps.core.models import (
     DatasetWithExpiration,
     DeleteFileWorkOrder,
     DownloadWorkOrder,
-    SlimResearchDataUploadBox,
+    ResearchDataUploadBoxBasics,
     UploadFileWorkOrder,
     UploadPathType,
     ViewFileBoxWorkOrder,
@@ -542,7 +542,9 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             datasets_with_expiration.append(dataset_with_expiration)
         return datasets_with_expiration
 
-    async def register_upload_box(self, upload_box: SlimResearchDataUploadBox) -> None:
+    async def register_upload_box(
+        self, upload_box: ResearchDataUploadBoxBasics
+    ) -> None:
         """Register an upload box."""
         await self._upload_box_dao.upsert(upload_box)
         log.info("Upserted UploadBox with ID %s", upload_box.id)
@@ -557,7 +559,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 "UploadBox with ID %s not found, presumed already deleted.", box_id
             )
 
-    async def get_upload_box(self, box_id: UUID4) -> SlimResearchDataUploadBox:
+    async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBoxBasics:
         """Get a registered upload box using the given ID.
 
         Raises an `UploadBoxNotFoundError` if no doc with the box_id exists.

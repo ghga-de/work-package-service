@@ -29,7 +29,7 @@ from hexkit.providers.mongodb.testutils import MongoDbFixture
 from hexkit.utils import now_utc_ms_prec
 
 from wps.config import Config
-from wps.core.models import SlimResearchDataUploadBox
+from wps.core.models import ResearchDataUploadBoxBasics
 from wps.prepare import Consumer, prepare_consumer
 
 from .fixtures import (  # noqa: F401
@@ -249,7 +249,7 @@ async def test_outbox_consumer(config: Config, kafka: KafkaFixture):
         last_changed=now_utc_ms_prec(),
     )
 
-    test_box = SlimResearchDataUploadBox(
+    test_box = ResearchDataUploadBoxBasics(
         id=research_data_upload_box_id,
         file_upload_box_id=file_upload_box_id,
         title=test_event.title,

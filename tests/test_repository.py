@@ -31,7 +31,7 @@ from wps.config import Config
 from wps.core.models import (
     BoxWithExpiration,
     Dataset,
-    SlimResearchDataUploadBox,
+    ResearchDataUploadBoxBasics,
     WorkPackage,
     WorkPackageCreationData,
     WorkPackageCreationResponse,
@@ -328,7 +328,7 @@ async def test_box_crud(
     collection = db[config.upload_boxes_collection]
     box_id = uuid4()
     file_upload_box_id = uuid4()
-    box = SlimResearchDataUploadBox(
+    box = ResearchDataUploadBoxBasics(
         id=box_id,
         file_upload_box_id=file_upload_box_id,
         title="My Upload",
@@ -370,7 +370,7 @@ async def test_box_crud_error_handling(
 
     # Register box twice - should not see an error
     box_id = uuid4()
-    box = SlimResearchDataUploadBox(
+    box = ResearchDataUploadBoxBasics(
         id=box_id,
         file_upload_box_id=uuid4(),
         title="My Upload",
@@ -392,7 +392,7 @@ async def test_get_boxes(repository: WorkPackageRepository, mongodb: MongoDbFixt
     # Insert some boxes
     box_ids = BOXES_WITH_UPLOAD_ACCESS
     boxes = [
-        SlimResearchDataUploadBox(
+        ResearchDataUploadBoxBasics(
             id=box_ids[i],
             file_upload_box_id=uuid4(),
             title=f"Box{i}",

@@ -40,7 +40,7 @@ __all__ = [
     "CloseFileWorkOrder",
     "CreateFileWorkOrder",
     "DeleteFileWorkOrder",
-    "SlimResearchDataUploadBox",
+    "ResearchDataUploadBoxBasics",
     "UploadFileWorkOrder",
     "UploadPathType",
     "UploadWorkOrderTokenRequest",
@@ -160,7 +160,7 @@ class DeleteFileWorkOrder(BaseWorkOrderToken, _FileUploadToken):
     work_type: DeleteType = "delete"
 
 
-class SlimResearchDataUploadBox(BaseDto):
+class ResearchDataUploadBoxBasics(BaseDto):
     """A model describing an upload box that groups file uploads.
 
     This model contains a selected subset of the fields from the shared model
@@ -182,7 +182,7 @@ class SlimResearchDataUploadBox(BaseDto):
     )
 
 
-class BoxWithExpiration(SlimResearchDataUploadBox):
+class BoxWithExpiration(ResearchDataUploadBoxBasics):
     """A model describing a research data upload box with an expiration date."""
 
     expires: UTCDatetime = Field(

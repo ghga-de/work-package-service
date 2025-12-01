@@ -33,7 +33,7 @@ from wps.constants import TRACER
 from wps.core.models import (
     Dataset,
     DatasetFile,
-    SlimResearchDataUploadBox,
+    ResearchDataUploadBoxBasics,
     WorkPackageType,
 )
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
@@ -177,7 +177,7 @@ class OutboxSubTranslator(DaoSubscriberProtocol):
         """Consume a change event (created or updated) for the research data upload box
         with the given ID.
         """
-        upload_box = SlimResearchDataUploadBox(
+        upload_box = ResearchDataUploadBoxBasics(
             id=update.id,
             file_upload_box_id=update.file_upload_box_id,
             title=update.title,
