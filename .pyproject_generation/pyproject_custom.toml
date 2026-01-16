@@ -1,6 +1,6 @@
 [project]
 name = "wps"
-version = "7.1.0"
+version = "7.1.1"
 description = "Work Package Service"
 dependencies = [
     "ghga-event-schemas~=11.1.1",
