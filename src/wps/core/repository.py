@@ -179,7 +179,14 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             "work_package_type": WorkPackageType.DOWNLOAD,
         }
 
-        expires = await self._access.check_download_access(user_id, dataset_id)
+        try:
+            expires = await self._access.check_download_access(user_id, dataset_id)
+        except self._access.AccessCheckError as error:
+            access_error = self.WorkPackageAccessError(
+                "Failed to check dataset access permission"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error from error
         if not expires:
             access_error = self.WorkPackageAccessError(
                 "Missing dataset access permission"
@@ -229,7 +236,14 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             "work_package_type": WorkPackageType.UPLOAD,
         }
 
-        expires = await self._access.check_upload_access(user_id, box_id)
+        try:
+            expires = await self._access.check_upload_access(user_id, box_id)
+        except self._access.AccessCheckError as error:
+            access_error = self.WorkPackageAccessError(
+                "Failed to check upload box access permission"
+            )
+            log.error(access_error, extra=extra)
+            raise access_error from error
         if not expires:
             access_error = self.WorkPackageAccessError(
                 "Missing upload box access permission"
@@ -326,15 +340,29 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
                 raise access_error
             # Check access based on work package type
             if work_package.type == WorkPackageType.DOWNLOAD:
-                has_access = await self._access.check_download_access(
-                    work_package.user_id,
-                    work_package.dataset_id,  # type: ignore
-                )
+                try:
+                    has_access = await self._access.check_download_access(
+                        work_package.user_id,
+                        work_package.dataset_id,  # type: ignore
+                    )
+                except self._access.AccessCheckError as error:
+                    access_error = self.WorkPackageAccessError(
+                        "Failed to check dataset access permission"
+                    )
+                    log.error(access_error, extra=extra)
+                    raise access_error from error
             elif work_package.type == WorkPackageType.UPLOAD:
-                has_access = await self._access.check_upload_access(
-                    work_package.user_id,
-                    work_package.box_id,  # type: ignore
-                )
+                try:
+                    has_access = await self._access.check_upload_access(
+                        work_package.user_id,
+                        work_package.box_id,  # type: ignore
+                    )
+                except self._access.AccessCheckError as error:
+                    access_error = self.WorkPackageAccessError(
+                        "Failed to check upload box access permission"
+                    )
+                    log.error(access_error, extra=extra)
+                    raise access_error from error
             else:  # pragma: no cover
                 has_access = False
 
@@ -486,7 +514,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     async def delete_dataset(self, dataset_id: str) -> None:
         """Delete a dataset with all of its files.
 
-        If the dataset does not exist, a DatasetNotFoundError will be raised.
+        If no such dataset exists, a DatasetNotFoundError will be raised.
         """
         try:
             await self._dataset_dao.delete(id_=dataset_id)
@@ -498,7 +526,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     async def get_dataset(self, dataset_id: str) -> Dataset:
         """Get a registered dataset using the given ID.
 
-        If the dataset does not exist, a DatasetNotFoundError will be raised.
+        If no such dataset exists, a DatasetNotFoundError will be raised.
         """
         try:
             return await self._dataset_dao.get_by_id(dataset_id)
@@ -513,6 +541,8 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         """Get the list of all datasets accessible to the authenticated user.
 
         The returned datasets also have an expiration date until when access is granted.
+
+        Raises WorkPackageAccessError on failure.
         """
         try:
             user_id = UUID(auth_context.id)
@@ -526,9 +556,23 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(access_error)
             raise access_error
 
-        dataset_id_to_expiration = (
-            await self._access.get_accessible_datasets_with_expiration(user_id)
+        try:
+            dataset_id_to_expiration = (
+                await self._access.get_accessible_datasets_with_expiration(user_id)
+            )
+        except self._access.AccessCheckError as error:
+            access_error = self.WorkPackageAccessError(
+                "Failed to fetch accessible datasets with expiration"
+            )
+            log.error(access_error)
+            raise access_error from error
+
+        log.debug(
+            "Retrieved %i datasets for user %s",
+            len(dataset_id_to_expiration),
+            user_id,
         )
+
         datasets_with_expiration: list[DatasetWithExpiration] = []
         for dataset_id in dataset_id_to_expiration:
             try:
@@ -562,39 +606,62 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBoxBasics:
         """Get a registered upload box using the given ID.
 
-        Raises an `UploadBoxNotFoundError` if no doc with the box_id exists.
+        If such a box does not exist, an UploadBoxNotFoundError will be raised.
         """
         try:
             return await self._upload_box_dao.get_by_id(box_id)
-        except ResourceNotFoundError as err:
-            error = self.UploadBoxNotFoundError("UploadBox not found")
-            log.error(error, extra={"box_id": box_id})
-            raise error from err
+        except ResourceNotFoundError as error:
+            box_not_found_error = self.UploadBoxNotFoundError("UploadBox not found")
+            log.error(box_not_found_error, extra={"box_id": box_id})
+            raise box_not_found_error from error
 
-    async def get_upload_boxes(self, *, user_id: UUID4) -> list[BoxWithExpiration]:
-        """Get the list of all upload boxes accessible to the authenticated user
-        along with access expiry.
+    async def get_upload_boxes(
+        self, *, auth_context: AuthContext
+    ) -> list[BoxWithExpiration]:
+        """Get the list of all upload boxes accessible to the authenticated user.
+
+        The returned boxes also have an expiration date until when access is granted.
+
+        Raises WorkPackageAccessError on failure.
         """
-        # Get accessible upload boxes from access service
-        box_id_to_expiration = await self._access.get_accessible_boxes_with_expiration(
-            user_id
-        )
+        try:
+            user_id = UUID(auth_context.id)
+        except ValueError as error:
+            access_error = self.WorkPackageAccessError("Malformed user ID supplied")
+            log.error(access_error)
+            raise access_error from error
+
+        if user_id is None:
+            access_error = self.WorkPackageAccessError("No internal user specified")
+            log.error(access_error)
+            raise access_error
+
+        try:
+            box_id_to_expiration = (
+                await self._access.get_accessible_boxes_with_expiration(user_id)
+            )
+        except self._access.AccessCheckError as error:
+            access_error = self.WorkPackageAccessError(
+                "Failed to fetch accessible upload boxes with expiration"
+            )
+            log.error(access_error)
+            raise access_error from error
+
         log.debug(
             "Retrieved %i upload boxes for user %s",
             len(box_id_to_expiration),
             user_id,
         )
 
-        upload_boxes: list[BoxWithExpiration] = []
+        upload_boxes_with_expiration: list[BoxWithExpiration] = []
         for box_id, expiration in box_id_to_expiration.items():
             try:
                 upload_box = await self.get_upload_box(box_id)
-                box_with_expiration = BoxWithExpiration(
-                    **upload_box.model_dump(), expires=expiration
-                )
-                upload_boxes.append(box_with_expiration)
             except self.UploadBoxNotFoundError:
                 log.debug("Upload box '%s' not found, continuing...", box_id)
                 continue
-
-        return upload_boxes
+            box_with_expiration = BoxWithExpiration(
+                **upload_box.model_dump(), expires=expiration
+            )
+            upload_boxes_with_expiration.append(box_with_expiration)
+        return upload_boxes_with_expiration

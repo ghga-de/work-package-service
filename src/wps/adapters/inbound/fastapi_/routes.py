@@ -277,7 +277,7 @@ async def get_upload_boxes(
             raise repository.WorkPackageAccessError(
                 "Not authorized to get upload boxes"
             )
-        boxes_with_expiration = await repository.get_upload_boxes(user_id=user_id)
+        boxes = await repository.get_upload_boxes(auth_context=auth_context)
     except repository.WorkPackageAccessError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error
-    return boxes_with_expiration
+    return boxes
