@@ -137,14 +137,9 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         try:
             user_id = UUID(auth_context.id)
         except ValueError as error:
-            access_error = self.WorkPackageAccessError("Malformed user ID supplied")
+            access_error = self.WorkPackageAccessError("Invalid user ID")
             log.error(access_error)
             raise access_error from error
-
-        if user_id is None:
-            access_error = self.WorkPackageAccessError("No internal user specified")
-            log.error(access_error)
-            raise access_error
 
         dataset_id = creation_data.dataset_id
         box_id = creation_data.box_id
@@ -169,7 +164,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self,
         creation_data: WorkPackageCreationData,
         auth_context: AuthContext,
-        user_id: UUID,
+        user_id: UUID4,
         dataset_id: str,
     ) -> WorkPackageCreationResponse:
         """Create a download work package."""
@@ -226,8 +221,8 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self,
         creation_data: WorkPackageCreationData,
         auth_context: AuthContext,
-        user_id: UUID,
-        box_id: UUID,
+        user_id: UUID4,
+        box_id: UUID4,
     ) -> WorkPackageCreationResponse:
         """Create an upload work package."""
         extra = {  # only used for logging
@@ -260,7 +255,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self,
         creation_data: WorkPackageCreationData,
         auth_context: AuthContext,
-        user_id: UUID,
+        user_id: UUID4,
         expires: UTCDatetime,
         files: dict[str, str],
         *,
@@ -300,7 +295,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
     async def get(
         self,
-        work_package_id: UUID,
+        work_package_id: UUID4,
         *,
         check_valid: bool = True,
         work_package_access_token: str | None = None,
@@ -535,27 +530,13 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(dataset_not_found_error, extra={"dataset_id": dataset_id})
             raise dataset_not_found_error from error
 
-    async def get_datasets(
-        self, *, auth_context: AuthContext
-    ) -> list[DatasetWithExpiration]:
-        """Get the list of all datasets accessible to the authenticated user.
+    async def get_datasets(self, user_id: UUID4) -> list[DatasetWithExpiration]:
+        """Get the list of all datasets accessible to the specified user.
 
         The returned datasets also have an expiration date until when access is granted.
 
         Raises WorkPackageAccessError on failure.
         """
-        try:
-            user_id = UUID(auth_context.id)
-        except ValueError as error:
-            access_error = self.WorkPackageAccessError("Malformed user ID supplied")
-            log.error(access_error)
-            raise access_error from error
-
-        if user_id is None:
-            access_error = self.WorkPackageAccessError("No internal user specified")
-            log.error(access_error)
-            raise access_error
-
         try:
             dataset_id_to_expiration = (
                 await self._access.get_accessible_datasets_with_expiration(user_id)
@@ -618,27 +599,13 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(box_not_found_error, extra={"box_id": box_id})
             raise box_not_found_error from error
 
-    async def get_upload_boxes(
-        self, *, auth_context: AuthContext
-    ) -> list[BoxWithExpiration]:
-        """Get the list of all upload boxes accessible to the authenticated user.
+    async def get_upload_boxes(self, user_id: UUID4) -> list[BoxWithExpiration]:
+        """Get the list of all upload boxes accessible to the specified user.
 
         The returned boxes also have an expiration date until when access is granted.
 
         Raises WorkPackageAccessError on failure.
         """
-        try:
-            user_id = UUID(auth_context.id)
-        except ValueError as error:
-            access_error = self.WorkPackageAccessError("Malformed user ID supplied")
-            log.error(access_error)
-            raise access_error from error
-
-        if user_id is None:
-            access_error = self.WorkPackageAccessError("No internal user specified")
-            log.error(access_error)
-            raise access_error
-
         try:
             box_id_to_expiration = (
                 await self._access.get_accessible_boxes_with_expiration(user_id)

@@ -131,10 +131,8 @@ class WorkPackageRepositoryPort(ABC):
         """
 
     @abstractmethod
-    async def get_datasets(
-        self, *, auth_context: AuthContext
-    ) -> list[DatasetWithExpiration]:
-        """Get the list of all datasets accessible to the authenticated user.
+    async def get_datasets(self, user_id: UUID4) -> list[DatasetWithExpiration]:
+        """Get the list of all datasets accessible to the specified user.
 
         The returned datasets also have an expiration date until when access is granted.
 
@@ -162,10 +160,8 @@ class WorkPackageRepositoryPort(ABC):
         """
 
     @abstractmethod
-    async def get_upload_boxes(
-        self, *, auth_context: AuthContext
-    ) -> list[BoxWithExpiration]:
-        """Get the list of all upload boxes accessible to the authenticated user.
+    async def get_upload_boxes(self, user_id: UUID4) -> list[BoxWithExpiration]:
+        """Get the list of all upload boxes accessible to the specified user.
 
         The returned boxes also have an expiration date until when access is granted.
 

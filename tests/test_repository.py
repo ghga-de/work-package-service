@@ -29,6 +29,7 @@ from hexkit.utils import now_utc_ms_prec
 from tests.fixtures.access import (
     BOXES_WITH_UPLOAD_ACCESS,
     USER_FOR_ACCESS_CHECK_ERROR,
+    USERS_WITH_DOWNLOAD_ACCESS,
     USERS_WITH_UPLOAD_ACCESS,
 )
 from wps.config import Config
@@ -54,16 +55,6 @@ from .fixtures.crypt import decrypt, user_public_crypt4gh_key
 from .fixtures.datasets import DATASET
 
 pytestmark = pytest.mark.asyncio()
-
-
-def auth_context_for_access_check_error(auth_context: AuthContext) -> AuthContext:
-    """Create an AuthContext that will trigger an access check error."""
-    return auth_context.model_copy(update={"id": str(USER_FOR_ACCESS_CHECK_ERROR)})
-
-
-def auth_context_for_upload(auth_context: AuthContext) -> AuthContext:
-    """Create an AuthContext that can upload."""
-    return auth_context.model_copy(update={"id": str(USERS_WITH_UPLOAD_ACCESS[0])})
 
 
 async def test_work_package_and_token_creation(
@@ -93,7 +84,9 @@ async def test_work_package_and_token_creation(
     ):
         await repository.create(
             creation_data=creation_data,
-            auth_context=auth_context_for_access_check_error(auth_context),
+            auth_context=auth_context.model_copy(
+                update={"id": str(USER_FOR_ACCESS_CHECK_ERROR)}
+            ),
         )
 
     creation_response = await repository.create(
@@ -261,14 +254,16 @@ async def test_checking_accessible_datasets(
     with pytest.raises(repository.DatasetNotFoundError):
         await repository.get_dataset("some-dataset_id")
 
-    assert await repository.get_datasets(auth_context=auth_context) == []
+    assert await repository.get_datasets(user_id=USERS_WITH_DOWNLOAD_ACCESS[0]) == []
 
     # announce dataset
     await repository.register_dataset(DATASET)
 
     assert await repository.get_dataset("some-dataset-id") == DATASET
 
-    datasets_with_expiration = await repository.get_datasets(auth_context=auth_context)
+    datasets_with_expiration = await repository.get_datasets(
+        user_id=USERS_WITH_DOWNLOAD_ACCESS[0]
+    )
     assert len(datasets_with_expiration) == 1
     dataset_with_expiration = datasets_with_expiration[0]
 
@@ -283,9 +278,7 @@ async def test_checking_accessible_datasets(
         repository.WorkPackageAccessError,
         match="Failed to fetch accessible datasets with expiration",
     ):
-        await repository.get_datasets(
-            auth_context=auth_context_for_access_check_error(auth_context)
-        )
+        await repository.get_datasets(user_id=USER_FOR_ACCESS_CHECK_ERROR)
 
 
 async def test_deletion_of_datasets(
@@ -444,13 +437,13 @@ async def test_get_boxes(
 
     # Try with the normal user - we should get an empty list
     boxes_with_expiration: list[BoxWithExpiration] = await repository.get_upload_boxes(
-        auth_context=auth_context
+        user_id=UUID(auth_context.id)
     )
     assert not boxes_with_expiration
 
     # Try again with a user that has upload access - should now get the boxes
     boxes_with_expiration = await repository.get_upload_boxes(
-        auth_context=auth_context_for_upload(auth_context)
+        user_id=USERS_WITH_UPLOAD_ACCESS[0]
     )
     assert boxes_with_expiration
     assert len(boxes_with_expiration) == 2
@@ -461,6 +454,4 @@ async def test_get_boxes(
         repository.WorkPackageAccessError,
         match="Failed to fetch accessible upload boxes with expiration",
     ):
-        await repository.get_upload_boxes(
-            auth_context=auth_context_for_access_check_error(auth_context)
-        )
+        await repository.get_upload_boxes(user_id=USER_FOR_ACCESS_CHECK_ERROR)
