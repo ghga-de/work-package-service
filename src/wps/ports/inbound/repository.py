@@ -151,7 +151,7 @@ class WorkPackageRepositoryPort(ABC):
     async def delete_upload_box(self, box_id: UUID4) -> None:
         """Delete an upload box with the given ID.
 
-        If such a box does not exist, an UploadBoxNotFoundError will be raised.
+        If no such box exists, an UploadBoxNotFoundError will be raised.
         """
 
     @abstractmethod
