@@ -594,7 +594,10 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         log.info("Upserted UploadBox with ID %s", upload_box.id)
 
     async def delete_upload_box(self, box_id: UUID4) -> None:
-        """Delete an upload box with the given ID."""
+        """Delete an upload box with the given ID.
+
+        If no such box exists, an UploadBoxNotFoundError will be raised.
+        """
         try:
             await self._upload_box_dao.delete(id_=box_id)
             log.info("Deleted UploadBox with ID %s", box_id)
