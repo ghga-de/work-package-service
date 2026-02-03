@@ -86,7 +86,8 @@ class AccessCheckAdapter(AccessCheckPort):
             reason_phrase = response.reason_phrase
             msg = "Unexpected response when checking download access for a dataset"
             log.error(
-                msg,
+                f"{msg}: %s",
+                short_repr(response.text),
                 extra={
                     "user_id": user_id,
                     "dataset_id": dataset_id,
@@ -139,7 +140,8 @@ class AccessCheckAdapter(AccessCheckPort):
             reason_phrase = response.reason_phrase
             msg = "Unexpected response when fetching download access list"
             log.error(
-                msg,
+                f"{msg}: %s",
+                short_repr(response.text),
                 extra={
                     "user_id": user_id,
                     "error": status_code,
@@ -200,7 +202,8 @@ class AccessCheckAdapter(AccessCheckPort):
             reason_phrase = response.reason_phrase
             msg = "Unexpected response when checking upload access to a box"
             log.error(
-                msg,
+                f"{msg}: %s",
+                short_repr(response.text),
                 extra={
                     "user_id": user_id,
                     "box_id": box_id,
@@ -253,7 +256,8 @@ class AccessCheckAdapter(AccessCheckPort):
             reason_phrase = response.reason_phrase
             msg = "Unexpected response when fetching upload access list"
             log.error(
-                msg,
+                f"{msg}: %s",
+                short_repr(response.text),
                 extra={
                     "user_id": user_id,
                     "error": status_code,
