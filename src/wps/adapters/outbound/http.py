@@ -162,9 +162,7 @@ class AccessCheckAdapter(AccessCheckPort):
         except Exception as error:
             msg = "Invalid response when fetching download access list"
             log.error(
-                f"{msg}: %s",
-                short_repr(response.text),
-                extra={"user_id": user_id},
+                f"{msg}: %s", short_repr(response.text), extra={"user_id": user_id}
             )
             raise self.AccessCheckError(msg) from error
         accessible_datasets: dict[str, UTCDatetime] = {}
@@ -176,10 +174,7 @@ class AccessCheckAdapter(AccessCheckPort):
                 log.error(
                     f"{msg}: %s",
                     short_repr(valid_until),
-                    extra={
-                        "user_id": user_id,
-                        "dataset_id": dataset_id,
-                    },
+                    extra={"user_id": user_id, "dataset_id": dataset_id},
                 )
                 raise self.AccessCheckError(msg) from err
             accessible_datasets[dataset_id] = converted_datetime
@@ -278,9 +273,7 @@ class AccessCheckAdapter(AccessCheckPort):
         except Exception as error:
             msg = "Invalid response when fetching upload access list"
             log.error(
-                f"{msg}: %s",
-                short_repr(response.text),
-                extra={"user_id": user_id},
+                f"{msg}: %s", short_repr(response.text), extra={"user_id": user_id}
             )
             raise self.AccessCheckError(msg) from error
         accessible_boxes: dict[UUID4, UTCDatetime] = {}
@@ -289,13 +282,7 @@ class AccessCheckAdapter(AccessCheckPort):
                 converted_box_id = UUID(box_id)
             except (ValueError, TypeError) as err:
                 msg = "Invalid UUID when fetching upload access list"
-                log.error(
-                    f"{msg}: %s",
-                    short_repr(box_id),
-                    extra={
-                        "user_id": user_id,
-                    },
-                )
+                log.error(f"{msg}: %s", short_repr(box_id), extra={"user_id": user_id})
                 raise self.AccessCheckError(msg) from err
             try:
                 converted_datetime = datetime.fromisoformat(valid_until)
@@ -304,10 +291,7 @@ class AccessCheckAdapter(AccessCheckPort):
                 log.error(
                     f"{msg}: %s",
                     short_repr(valid_until),
-                    extra={
-                        "user_id": user_id,
-                        "box_id": box_id,
-                    },
+                    extra={"user_id": user_id, "box_id": box_id},
                 )
                 raise self.AccessCheckError(msg) from err
             accessible_boxes[converted_box_id] = converted_datetime
