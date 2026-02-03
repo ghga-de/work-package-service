@@ -606,7 +606,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
     async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBoxBasics:
         """Get a registered upload box using the given ID.
 
-        If such a box does not exist, an UploadBoxNotFoundError will be raised.
+        If no such box exists, an UploadBoxNotFoundError will be raised.
         """
         try:
             return await self._upload_box_dao.get_by_id(box_id)
