@@ -159,7 +159,7 @@ def test_work_package():
     [
         pytest.param(
             "some-dataset-id",
-            None,
+            uuid4(),
             WorkPackageType.UPLOAD,
             "dataset_id shouldn't be provided for upload work packages",
             id="UploadWithDatasetId",
