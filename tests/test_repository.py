@@ -124,9 +124,9 @@ async def test_work_package_and_token_creation(
     assert package.dataset_id == "some-dataset-id"
     assert package.type == WorkPackageType.DOWNLOAD
     assert package.files == {
-        "file-id-1": ".json",
-        "file-id-2": ".csv",
-        "file-id-3": ".bam",
+        "GHGA001": ".json",
+        "GHGA002": ".csv",
+        "GHGA003": ".bam",
     }
     assert package.user_public_crypt4gh_key == user_public_crypt4gh_key
     assert package.user_id == UUID(auth_context.id)
@@ -139,27 +139,38 @@ async def test_work_package_and_token_creation(
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=uuid4(),
-            file_id="file-id-1",
+            accession="GHGA001",
             work_package_access_token=wpat,
         )
 
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=work_package_id,
-            file_id="invalid-file-id",
+            accession="invalid-accession",
             work_package_access_token=wpat,
         )
 
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=work_package_id,
-            file_id="file-id-1",
+            accession="GHGA001",
             work_package_access_token="invalid-token",
         )
 
+    # Valid args, but the accession map is still absent
+    with pytest.raises(repository.WorkPackageAccessError):
+        wot = await repository.get_download_wot(
+            work_package_id=work_package_id,
+            accession="GHGA003",
+            work_package_access_token=wpat,
+        )
+
+    # Add the accession map, then try again
+    await repository.store_accession_map(accession_map=FILE_ACCESSION_MAP_EVENT)
+
     wot = await repository.get_download_wot(
         work_package_id=work_package_id,
-        file_id="file-id-3",
+        accession="GHGA003",
         work_package_access_token=wpat,
     )
     assert wot is not None
@@ -170,7 +181,8 @@ async def test_work_package_and_token_creation(
     assert wot_claims.pop("exp") - wot_claims.pop("iat") == valid_days
     assert wot_claims == {
         "work_type": package.type.value,
-        "file_id": "file-id-3",
+        "file_id": str(FILE_ACCESSION_MAP_EVENT.model_dump()["GHGA003"]),
+        "accession": "GHGA003",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
 
@@ -178,7 +190,7 @@ async def test_work_package_and_token_creation(
     creation_data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
         type=WorkPackageType.DOWNLOAD,
-        file_ids=["file-id-1", "file-id-3", "non-existing-file"],
+        file_ids=["GHGA001", "GHGA003", "non-existing-file"],
         user_public_crypt4gh_key=user_public_crypt4gh_key,
     )
 
@@ -195,20 +207,20 @@ async def test_work_package_and_token_creation(
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=work_package_id,
-            file_id="non-existing-file",
+            accession="non-existing-file",
             work_package_access_token=wpat,
         )
 
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=work_package_id,
-            file_id="file-id-2",
+            accession="GHGA002",
             work_package_access_token=wpat,
         )
 
     wot = await repository.get_download_wot(
         work_package_id=work_package_id,
-        file_id="file-id-1",
+        accession="GHGA001",
         work_package_access_token=wpat,
     )
     assert wot is not None
@@ -219,7 +231,8 @@ async def test_work_package_and_token_creation(
     assert wot_claims.pop("exp") - wot_claims.pop("iat") == valid_days
     assert wot_claims == {
         "work_type": package.type.value,
-        "file_id": "file-id-1",
+        "file_id": str(FILE_ACCESSION_MAP_EVENT.model_dump()["GHGA001"]),
+        "accession": "GHGA001",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
 
@@ -238,7 +251,7 @@ async def test_work_package_and_token_creation(
         with pytest.raises(repository.WorkPackageAccessError):
             await repository.get_download_wot(
                 work_package_id=work_package_id,
-                file_id="file-id-1",
+                accession="GHGA001",
                 work_package_access_token=wpat,
             )
     finally:
