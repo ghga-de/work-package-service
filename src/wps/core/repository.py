@@ -55,7 +55,7 @@ from wps.core.tokens import (
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
 from wps.ports.outbound.access import AccessCheckPort
 from wps.ports.outbound.dao import (
-    AccessionMapDao,
+    AccessionMapDaoPort,
     DatasetDaoPort,
     ResourceNotFoundError,
     UploadBoxDaoPort,
@@ -111,7 +111,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         *,
         config: WorkPackageConfig,
         access_check: AccessCheckPort,
-        accession_map_dao: AccessionMapDao,
+        accession_map_dao: AccessionMapDaoPort,
         dataset_dao: DatasetDaoPort,
         upload_box_dao: UploadBoxDaoPort,
         work_package_dao: WorkPackageDaoPort,

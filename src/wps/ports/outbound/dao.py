@@ -21,7 +21,7 @@ from hexkit.protocols.dao import Dao, ResourceNotFoundError
 from wps.core import models
 
 __all__ = [
-    "AccessionMapDao",
+    "AccessionMapDaoPort",
     "DatasetDaoPort",
     "ResourceNotFoundError",
     "UploadBoxDaoPort",
@@ -32,4 +32,4 @@ __all__ = [
 DatasetDaoPort = Dao[models.Dataset]
 UploadBoxDaoPort = Dao[models.ResearchDataUploadBoxBasics]
 WorkPackageDaoPort = Dao[models.WorkPackage]
-AccessionMapDao = Dao[models.FileAccessionMap]
+AccessionMapDaoPort = Dao[models.FileAccessionMap]
