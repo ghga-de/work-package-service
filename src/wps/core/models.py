@@ -18,7 +18,8 @@ in the API.
 """
 
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
+from uuid import uuid4
 
 from ghga_service_commons.utils.utc_dates import UTCDatetime
 from hexkit.protocols.dao import UUID4Field
@@ -28,6 +29,8 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
+    RootModel,
+    StringConstraints,
     field_validator,
     model_validator,
 )
@@ -35,6 +38,8 @@ from pydantic import (
 from wps.core.crypt import validate_public_key
 
 __all__ = [
+    "Accession",
+    "AccessionMapEventPayload",
     "BaseWorkOrderToken",
     "BoxWithExpiration",
     "CloseFileWorkOrder",
@@ -51,6 +56,10 @@ __all__ = [
     "WorkPackageType",
     "WorkType",
 ]
+
+Accession = Annotated[str, StringConstraints(pattern=r"^GHGA.+")]
+
+AccessionMapEventPayload = RootModel[dict[Accession, UUID4]]
 
 
 class BaseDto(BaseModel):
@@ -114,7 +123,8 @@ class DownloadWorkOrder(BaseWorkOrderToken):
     """WOT schema authorizing a user to download a file from a dataset"""
 
     work_type: DownloadPathType = "download"
-    file_id: str  # should be the file accession, as opposed to UUID4 used for uploads
+    file_id: UUID4
+    accession: Accession
 
 
 class ViewFileBoxWorkOrder(BaseWorkOrderToken):
@@ -158,6 +168,38 @@ class DeleteFileWorkOrder(BaseWorkOrderToken, _FileUploadToken):
     """WOT schema authorizing a user to delete a file upload"""
 
     work_type: DeleteType = "delete"
+
+
+class ResearchDataUploadBox(BaseModel):
+    """A class representing a ResearchDataUploadBox.
+
+    This will be replaced with the ghga-event-schemas implementation soon.
+    """
+
+    id: UUID4 = Field(
+        default_factory=uuid4,
+        description="Unique identifier for the research data upload box",
+    )
+    version: int = Field(..., description="A counter indicating resource version")
+    state: Literal["open", "locked", "archived"] = Field(
+        ..., description="Current state of the research data upload box"
+    )
+    title: str = Field(..., description="Short meaningful name for the box")
+    description: str = Field(..., description="Describes the upload box in more detail")
+    last_changed: UTCDatetime = Field(..., description="Timestamp of the latest change")
+    changed_by: UUID4 = Field(
+        ..., description="ID of the user who performed the latest change"
+    )
+    file_upload_box_id: UUID4 = Field(..., description="The ID of the file upload box.")
+    file_upload_box_version: int = Field(
+        ..., description="A counter indicating resource version"
+    )
+    file_upload_box_state: Literal["open", "locked", "archived"] = Field(
+        ..., description="Current state of the file upload box"
+    )
+    file_count: int = Field(default=0, description="The number of files in the box")
+    size: int = Field(default=0, description="The total size of all files in the box")
+    storage_alias: str = Field(..., description="S3 storage alias to use for uploads")
 
 
 class ResearchDataUploadBoxBasics(BaseDto):
@@ -263,7 +305,7 @@ class WorkPackageDetails(BaseModel):
         default=None,
         description="IDs of all included files mapped to their file extensions (None"
         + " for upload work packages)",
-        examples=[{"file-id-1": ".json", "file-id-2": ".csv"}],
+        examples=[{"GHGA001": ".json", "GHGA002": ".csv"}],
     )
     box_id: UUID4 | None = Field(
         default=None, description="ID of the upload box (for upload work packages)"
@@ -333,3 +375,14 @@ class UploadWorkOrderTokenRequest(BaseModel):
                 "File alias is required for UPLOAD, CLOSE, DELETE work types"
             )
         return self
+
+
+class FileAccessionMap(BaseModel):
+    """A class used to associate a file ID with an accession number"""
+
+    accession: Accession = Field(
+        default=..., description="The accession number assigned to this file."
+    )
+    file_id: UUID4 = Field(
+        default=..., description="Unique identifier for the file upload"
+    )
