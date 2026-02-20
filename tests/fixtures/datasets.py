@@ -16,6 +16,8 @@
 
 """Sample datasets for testing."""
 
+from uuid import UUID
+
 from ghga_event_schemas.pydantic_ import (
     MetadataDatasetFile,
     MetadataDatasetID,
@@ -23,9 +25,21 @@ from ghga_event_schemas.pydantic_ import (
     MetadataDatasetStage,
 )
 
-from wps.core.models import Dataset, DatasetFile, WorkPackageType
+from wps.core.models import (
+    AccessionMapEventPayload,
+    Dataset,
+    DatasetFile,
+    FileAccessionMap,
+    WorkPackageType,
+)
 
-__all__ = ["DATASET", "DATASET_DELETION_EVENT", "DATASET_UPSERTION_EVENT"]
+__all__ = [
+    "DATASET",
+    "DATASET_DELETION_EVENT",
+    "DATASET_UPSERTION_EVENT",
+    "FILE_ACCESSION_MAPS",
+    "FILE_ACCESSION_MAP_EVENT",
+]
 
 
 DATASET = Dataset(
@@ -34,9 +48,9 @@ DATASET = Dataset(
     stage=WorkPackageType.DOWNLOAD,
     description="The first test dataset",
     files=[
-        DatasetFile(id="file-id-1", extension=".json"),
-        DatasetFile(id="file-id-2", extension=".csv"),
-        DatasetFile(id="file-id-3", extension=".bam"),
+        DatasetFile(id="GHGA001", extension=".json"),
+        DatasetFile(id="GHGA002", extension=".csv"),
+        DatasetFile(id="GHGA003", extension=".bam"),
     ],
 )
 
@@ -50,22 +64,35 @@ DATASET_UPSERTION_EVENT = MetadataDatasetOverview(
     dac_email="dac@some.org",
     files=[
         MetadataDatasetFile(
-            accession="file-id-1",
+            accession="GHGA001",
             description="The first file",
             file_extension=".json",
         ),
         MetadataDatasetFile(
-            accession="file-id-2",
+            accession="GHGA002",
             description="The second file",
             file_extension=".csv",
         ),
         MetadataDatasetFile(
-            accession="file-id-3",
+            accession="GHGA003",
             description="The third file",
             file_extension=".bam",
         ),
     ],
 )
+
+FILE_ACCESSION_MAP_EVENT = AccessionMapEventPayload(
+    {
+        "GHGA001": UUID("ed42650f-a683-4300-ad41-6d13e33b45eb"),
+        "GHGA002": UUID("abeffa71-37d0-4a4b-8b6d-c66e8a15af41"),
+        "GHGA003": UUID("d1038bd8-7a04-40ba-8a3d-9eb4146b02e9"),
+    }
+)
+
+FILE_ACCESSION_MAPS = [
+    FileAccessionMap(accession=accession, file_id=file_id)
+    for accession, file_id in FILE_ACCESSION_MAP_EVENT.model_dump().items()
+]
 
 
 DATASET_DELETION_EVENT = MetadataDatasetID(
