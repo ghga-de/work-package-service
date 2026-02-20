@@ -167,3 +167,13 @@ class WorkPackageRepositoryPort(ABC):
 
         Raises WorkPackageAccessError on failure.
         """
+
+    @abstractmethod
+    async def store_accession_map(
+        self, *, accession_map: AccessionMapEventPayload
+    ) -> None:
+        """Store an accession map in the database"""
+
+    @abstractmethod
+    async def delete_accession_map(self, *, accession: str) -> None:
+        """Delete the mapping for a given accession"""

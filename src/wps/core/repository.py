@@ -17,6 +17,7 @@
 """A repository for work packages."""
 
 import logging
+from contextlib import suppress
 from datetime import timedelta
 from uuid import UUID
 
@@ -29,6 +30,7 @@ from pydantic import UUID4, Field, SecretStr
 from pydantic_settings import BaseSettings
 
 from wps.core.models import (
+    AccessionMapEventPayload,
     BoxWithExpiration,
     CloseFileWorkOrder,
     CreateFileWorkOrder,
@@ -36,6 +38,7 @@ from wps.core.models import (
     DatasetWithExpiration,
     DeleteFileWorkOrder,
     DownloadWorkOrder,
+    FileAccessionMap,
     ResearchDataUploadBoxBasics,
     UploadFileWorkOrder,
     UploadPathType,
@@ -53,6 +56,7 @@ from wps.core.tokens import (
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
 from wps.ports.outbound.access import AccessCheckPort
 from wps.ports.outbound.dao import (
+    AccessionMapDao,
     DatasetDaoPort,
     ResourceNotFoundError,
     UploadBoxDaoPort,
@@ -77,6 +81,10 @@ class WorkPackageConfig(BaseSettings):
         "workPackages",
         description="The name of the database collection for work packages",
     )
+    accession_maps_collection: str = Field(
+        "accessionMaps",
+        description="The name of the database collection for file accession maps",
+    )
     work_package_valid_days: int = Field(
         30,
         description="How many days a work package (and its access token) stays valid",
@@ -99,11 +107,12 @@ WORK_TYPE_TO_MODEL: dict[str, type[FileUploadToken]] = {
 class WorkPackageRepository(WorkPackageRepositoryPort):
     """A repository for work packages."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         config: WorkPackageConfig,
         access_check: AccessCheckPort,
+        accession_map_dao: AccessionMapDao,
         dataset_dao: DatasetDaoPort,
         upload_box_dao: UploadBoxDaoPort,
         work_package_dao: WorkPackageDaoPort,
@@ -118,6 +127,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(key_error)
             raise key_error
         self._access = access_check
+        self._accession_map_dao = accession_map_dao
         self._dataset_dao = dataset_dao
         self._upload_box_dao = upload_box_dao
         self._dao = work_package_dao
@@ -635,3 +645,22 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             )
             upload_boxes_with_expiration.append(box_with_expiration)
         return upload_boxes_with_expiration
+
+    async def store_accession_map(
+        self, *, accession_map: AccessionMapEventPayload
+    ) -> None:
+        """Store an accession map in the database"""
+        for accession, file_id in accession_map.model_dump().items():
+            file_accession = FileAccessionMap(accession=accession, file_id=file_id)
+            await self._accession_map_dao.upsert(file_accession)
+            log.info(
+                "Upserted accession map for accession %s, file ID %s.",
+                accession,
+                file_id,
+            )
+
+    async def delete_accession_map(self, *, accession: str) -> None:
+        """Delete the mapping for a given accession"""
+        with suppress(ResourceNotFoundError):
+            await self._accession_map_dao.delete(accession)
+            log.info("Accession mapping deleted for accession %s", accession)
