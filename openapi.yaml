@@ -254,8 +254,8 @@ components:
           description: IDs of all included files mapped to their file extensions (None
             for upload work packages)
           examples:
-          - file-id-1: .json
-            file-id-2: .csv
+          - GHGA001: .json
+            GHGA002: .csv
           title: Files
         type:
           $ref: '#/components/schemas/WorkPackageType'
@@ -465,7 +465,7 @@ paths:
       tags:
       - WorkPackages
       - upload
-  /work-packages/{work_package_id}/files/{file_id}/work-order-tokens:
+  /work-packages/{work_package_id}/files/{accession}/work-order-tokens:
     post:
       description: Endpoint used to create a work order token for downloading a single
         file
@@ -479,10 +479,10 @@ paths:
           title: Work Package Id
           type: string
       - in: path
-        name: file_id
+        name: accession
         required: true
         schema:
-          title: File Id
+          title: Accession
           type: string
       responses:
         '201':

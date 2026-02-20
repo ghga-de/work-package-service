@@ -383,7 +383,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         self,
         *,
         work_package_id: UUID4,
-        file_id: str,
+        accession: str,
         check_valid: bool = True,
         work_package_access_token: str | None = None,
     ) -> str:
@@ -391,15 +391,16 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
         In the following cases, a WorkPackageAccessError is raised:
         - if a work package with the given work_package_id does not exist
-        - if the file_id is not contained in the work package
+        - if the accession is not contained in the work package
         - if check_valid is set and the work package has expired
         - if the work package type is not DOWNLOAD
         - if a work_package_access_token is specified and it does not match
           the token hash that is stored in the work package
+        - if the accession is not mapped to a file ID
         """
         extra = {  # only used for logging
             "work_package_id": work_package_id,
-            "file_id": file_id,
+            "accession": accession,
             "check_valid": check_valid,
         }
 
@@ -418,16 +419,28 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(access_error, extra=extra)
             raise access_error
 
-        # For Download-type work packages, the file ID must be in the list of files
-        if file_id not in (work_package.files or {}):
+        # For Download-type work packages, the accession must be in the list of files
+        if accession not in (work_package.files or {}):
             access_error = self.WorkPackageAccessError(
                 "File is not contained in work package"
             )
             log.error(access_error, extra=extra)
             raise access_error
 
+        try:
+            accession_map = await self._accession_map_dao.get_by_id(accession)
+        except ResourceNotFoundError as err:
+            mapping_error = self.WorkPackageAccessError(
+                "File not available for download"
+            )
+            log.error(mapping_error, extra=extra)
+            raise mapping_error from err
+        else:
+            file_id = accession_map.file_id
+
         wot = DownloadWorkOrder(
             file_id=file_id,
+            accession=accession,
             user_public_crypt4gh_key=work_package.user_public_crypt4gh_key,
         )
         signed_wot = sign_work_order_token(wot, self._signing_key)
