@@ -52,7 +52,7 @@ from .fixtures import (  # noqa: F401
     fixture_repository,
 )
 from .fixtures.crypt import decrypt, user_public_crypt4gh_key
-from .fixtures.datasets import DATASET
+from .fixtures.datasets import DATASET, FILE_ACCESSION_MAP_EVENT
 
 pytestmark = pytest.mark.asyncio()
 
@@ -455,3 +455,40 @@ async def test_get_boxes(
         match="Failed to fetch accessible upload boxes with expiration",
     ):
         await repository.get_upload_boxes(user_id=USER_FOR_ACCESS_CHECK_ERROR)
+
+
+async def test_accession_maps(
+    config: Config, repository: WorkPackageRepository, mongodb: MongoDbFixture
+):
+    """Test storing and deleting accession maps"""
+    collection = mongodb.client[config.db_name][config.accession_maps_collection]
+
+    # First verify nothing is in the collection
+    assert not collection.find().to_list()
+
+    # Store the example accession maps
+    await repository.store_accession_map(accession_map=FILE_ACCESSION_MAP_EVENT)
+
+    # Check the DB again
+    stored_accessions = collection.find().sort("_id").to_list()
+    expected_accessions = [
+        {"_id": k, "file_id": v}
+        for k, v in FILE_ACCESSION_MAP_EVENT.model_dump().items()
+    ]
+    assert stored_accessions == expected_accessions
+
+    # Repeat the call and verify DB contents are unchanged. Should not raise an error.
+    await repository.store_accession_map(accession_map=FILE_ACCESSION_MAP_EVENT)
+    stored_accessions = collection.find().sort("_id").to_list()
+    assert stored_accessions == expected_accessions
+
+    # Delete an accession that doesn't exist. Should not raise an error.
+    await repository.delete_accession_map(accession="GHGA009")
+    stored_accessions = collection.find().sort("_id").to_list()
+    assert stored_accessions == expected_accessions
+
+    # Delete an accession that does exist, then verify that it's no longer in the DB.
+    await repository.delete_accession_map(accession="GHGA003")
+    stored_accessions = collection.find().sort("_id").to_list()
+    del expected_accessions[-1]
+    assert stored_accessions == expected_accessions
