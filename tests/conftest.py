@@ -32,14 +32,17 @@ from hexkit.providers.mongodb.testutils import (  # noqa: F401
 from tests.fixtures import FILE_BOX_ID, RDU_BOX_ID
 from wps.config import Config
 
-from .fixtures.datasets import DATASET
+from .fixtures.datasets import DATASET, FILE_ACCESSION_MAPS
 
 
 @pytest.fixture(name="mongodb_populated")
 def mongodb_populated_fixture(
     mongodb: MongoDbFixture, config: Config
 ) -> MongoDbFixture:
-    """MongoDB Fixture with a database populated with one dataset and one upload box."""
+    """MongoDB Fixture with a database populated with one dataset and one upload box.
+
+    Accession mappings are also populated for the default test accessions.
+    """
     database = mongodb.client.get_database(config.db_name)
 
     # Insert a dataset into the database
@@ -47,6 +50,14 @@ def mongodb_populated_fixture(
     dataset = DATASET.model_dump()
     dataset["_id"] = dataset.pop("id")
     dataset_collection.insert_one(dataset)
+
+    # Insert file accession maps into database
+    accession_maps_collection = database.get_collection(
+        config.accession_maps_collection
+    )
+    for accession_map in FILE_ACCESSION_MAPS:
+        doc = {"_id": accession_map.accession, "file_id": accession_map.file_id}
+        accession_maps_collection.insert_one(doc)
 
     # Insert an upload box into the database
     upload_box = {
