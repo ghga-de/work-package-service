@@ -75,7 +75,7 @@ DATASET_UPSERTION_EVENT = MetadataDatasetOverview(
     ],
 )
 
-FILE_ACCESSION_MAP_DOCS = [
+FILE_ACCESSION_MAP_DOCS: list[dict] = [
     {"_id": "GHGA001", "file_id": UUID("ed42650f-a683-4300-ad41-6d13e33b45eb")},
     {"_id": "GHGA002", "file_id": UUID("abeffa71-37d0-4a4b-8b6d-c66e8a15af41")},
     {"_id": "GHGA003", "file_id": UUID("d1038bd8-7a04-40ba-8a3d-9eb4146b02e9")},
