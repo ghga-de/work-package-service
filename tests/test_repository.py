@@ -52,7 +52,7 @@ from .fixtures import (  # noqa: F401
     fixture_repository,
 )
 from .fixtures.crypt import decrypt, user_public_crypt4gh_key
-from .fixtures.datasets import DATASET, FILE_ACCESSION_MAP_EVENT
+from .fixtures.datasets import DATASET, FILE_ACCESSION_MAP_DOCS, FILE_ACCESSION_MAPS
 
 pytestmark = pytest.mark.asyncio()
 
@@ -165,8 +165,9 @@ async def test_work_package_and_token_creation(
             work_package_access_token=wpat,
         )
 
-    # Add the accession map, then try again
-    await repository.store_accession_map(accession_map=FILE_ACCESSION_MAP_EVENT)
+    # Add the example accession maps, then try again
+    for accession_map in FILE_ACCESSION_MAPS:
+        await repository.store_accession_map(accession_map=accession_map)
 
     wot = await repository.get_download_wot(
         work_package_id=work_package_id,
@@ -181,7 +182,7 @@ async def test_work_package_and_token_creation(
     assert wot_claims.pop("exp") - wot_claims.pop("iat") == valid_days
     assert wot_claims == {
         "work_type": package.type.value,
-        "file_id": str(FILE_ACCESSION_MAP_EVENT.model_dump()["GHGA003"]),
+        "file_id": str(FILE_ACCESSION_MAPS[2].file_id),
         "accession": "GHGA003",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
@@ -231,7 +232,7 @@ async def test_work_package_and_token_creation(
     assert wot_claims.pop("exp") - wot_claims.pop("iat") == valid_days
     assert wot_claims == {
         "work_type": package.type.value,
-        "file_id": str(FILE_ACCESSION_MAP_EVENT.model_dump()["GHGA001"]),
+        "file_id": str(FILE_ACCESSION_MAPS[0].file_id),
         "accession": "GHGA001",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
@@ -479,19 +480,17 @@ async def test_accession_maps(
     # First verify nothing is in the collection
     assert not collection.find().to_list()
 
-    # Store the example accession maps
-    await repository.store_accession_map(accession_map=FILE_ACCESSION_MAP_EVENT)
+    # Store example accession maps
+    for accession_map in FILE_ACCESSION_MAPS:
+        await repository.store_accession_map(accession_map=accession_map)
 
     # Check the DB again
     stored_accessions = collection.find().sort("_id").to_list()
-    expected_accessions = [
-        {"_id": k, "file_id": v}
-        for k, v in FILE_ACCESSION_MAP_EVENT.model_dump().items()
-    ]
+    expected_accessions = FILE_ACCESSION_MAP_DOCS.copy()
     assert stored_accessions == expected_accessions
 
     # Repeat the call and verify DB contents are unchanged. Should not raise an error.
-    await repository.store_accession_map(accession_map=FILE_ACCESSION_MAP_EVENT)
+    await repository.store_accession_map(accession_map=FILE_ACCESSION_MAPS[0])
     stored_accessions = collection.find().sort("_id").to_list()
     assert stored_accessions == expected_accessions
 

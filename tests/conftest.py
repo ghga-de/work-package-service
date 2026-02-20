@@ -32,7 +32,7 @@ from hexkit.providers.mongodb.testutils import (  # noqa: F401
 from tests.fixtures import FILE_BOX_ID, RDU_BOX_ID
 from wps.config import Config
 
-from .fixtures.datasets import DATASET, FILE_ACCESSION_MAPS
+from .fixtures.datasets import DATASET, FILE_ACCESSION_MAP_DOCS
 
 
 @pytest.fixture(name="mongodb_populated")
@@ -55,9 +55,8 @@ def mongodb_populated_fixture(
     accession_maps_collection = database.get_collection(
         config.accession_maps_collection
     )
-    for accession_map in FILE_ACCESSION_MAPS:
-        doc = {"_id": accession_map.accession, "file_id": accession_map.file_id}
-        accession_maps_collection.insert_one(doc)
+    for accession_map in FILE_ACCESSION_MAP_DOCS:
+        accession_maps_collection.insert_one(accession_map)
 
     # Insert an upload box into the database
     upload_box = {

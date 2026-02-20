@@ -31,9 +31,9 @@ from pydantic_settings import BaseSettings
 
 from wps.constants import TRACER
 from wps.core.models import (
-    AccessionMapEventPayload,
     Dataset,
     DatasetFile,
+    FileAccessionMap,
     ResearchDataUploadBox,
     ResearchDataUploadBoxBasics,
     WorkPackageType,
@@ -198,11 +198,11 @@ class RDUBOutboxTranslator(DaoSubscriberProtocol):
             await self._repository.delete_upload_box(UUID(resource_id))
 
 
-class AccessionMapOutboxTranslator(DaoSubscriberProtocol[AccessionMapEventPayload]):
+class AccessionMapOutboxTranslator(DaoSubscriberProtocol[FileAccessionMap]):
     """An outbox subscriber event translator for AccessionMap outbox events."""
 
     event_topic: str
-    dto_model = AccessionMapEventPayload
+    dto_model = FileAccessionMap
 
     def __init__(
         self,
@@ -215,24 +215,19 @@ class AccessionMapOutboxTranslator(DaoSubscriberProtocol[AccessionMapEventPayloa
         self._repository = work_package_repository
 
     @TRACER.start_as_current_span("AccessionMapOutboxTranslator.changed")
-    async def changed(self, resource_id: str, update: AccessionMapEventPayload) -> None:
+    async def changed(self, resource_id: str, update: FileAccessionMap) -> None:
         """Process an AccessionMap event."""
         log.info(
-            "Received upsertion outbox event for AccessionMap for box ID %s.",
+            "Received upsertion outbox event for AccessionMap for accession %s.",
             resource_id,
         )
         await self._repository.store_accession_map(accession_map=update)
 
     @TRACER.start_as_current_span("AccessionMapOutboxTranslator.deleted")
     async def deleted(self, resource_id: str) -> None:
-        """This should not be hit.
-
-        AccessionMap objects are inserted, modified, but not deleted. If we receive a
-        deletion event for an AccessionMap, there is an inconsistency in implementation
-        between services. The event should be sent to the DLQ.
-        """
+        """Delete the mapping for a given accession"""
         log.info(
-            "Received deletion outbox event for AccessionMap for box ID %s.",
+            "Received deletion outbox event for accession %s",
             resource_id,
         )
         await self._repository.delete_accession_map(accession=resource_id)

@@ -29,7 +29,6 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
-    RootModel,
     StringConstraints,
     field_validator,
     model_validator,
@@ -39,7 +38,6 @@ from wps.core.crypt import validate_public_key
 
 __all__ = [
     "Accession",
-    "AccessionMapEventPayload",
     "BaseWorkOrderToken",
     "BoxWithExpiration",
     "CloseFileWorkOrder",
@@ -58,8 +56,6 @@ __all__ = [
 ]
 
 Accession = Annotated[str, StringConstraints(pattern=r"^GHGA.+")]
-
-AccessionMapEventPayload = RootModel[dict[Accession, UUID4]]
 
 
 class BaseDto(BaseModel):

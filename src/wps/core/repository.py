@@ -30,7 +30,6 @@ from pydantic import UUID4, Field, SecretStr
 from pydantic_settings import BaseSettings
 
 from wps.core.models import (
-    AccessionMapEventPayload,
     BoxWithExpiration,
     CloseFileWorkOrder,
     CreateFileWorkOrder,
@@ -659,18 +658,14 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             upload_boxes_with_expiration.append(box_with_expiration)
         return upload_boxes_with_expiration
 
-    async def store_accession_map(
-        self, *, accession_map: AccessionMapEventPayload
-    ) -> None:
+    async def store_accession_map(self, *, accession_map: FileAccessionMap) -> None:
         """Store an accession map in the database"""
-        for accession, file_id in accession_map.model_dump().items():
-            file_accession = FileAccessionMap(accession=accession, file_id=file_id)
-            await self._accession_map_dao.upsert(file_accession)
-            log.info(
-                "Upserted accession map for accession %s, file ID %s.",
-                accession,
-                file_id,
-            )
+        await self._accession_map_dao.upsert(accession_map)
+        log.info(
+            "Upserted accession map for accession %s, file ID %s.",
+            accession_map.accession,
+            accession_map.file_id,
+        )
 
     async def delete_accession_map(self, *, accession: str) -> None:
         """Delete the mapping for a given accession"""

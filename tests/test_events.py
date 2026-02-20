@@ -39,7 +39,7 @@ from .fixtures.datasets import (
     DATASET,
     DATASET_DELETION_EVENT,
     DATASET_UPSERTION_EVENT,
-    FILE_ACCESSION_MAP_EVENT,
+    FILE_ACCESSION_MAPS,
 )
 
 pytestmark = pytest.mark.asyncio()
@@ -309,7 +309,7 @@ async def test_accession_outbox_consumer(config: Config, kafka: KafkaFixture):
     """Test consuming an 'upserted' & 'deleted' accession map event in the outbox consumer."""
     # Create a mock repository to track calls
     mock_repository = AsyncMock()
-    accession_map_event_payload = FILE_ACCESSION_MAP_EVENT.model_dump(mode="json")
+    accession_map_event_payload = FILE_ACCESSION_MAPS[0].model_dump(mode="json")
     # Create a consumer with the mock repository
     async with prepare_consumer(
         config=config, work_package_repo_override=mock_repository
@@ -329,7 +329,7 @@ async def test_accession_outbox_consumer(config: Config, kafka: KafkaFixture):
 
         # Verify that store_accession_map was called with the correct argument
         mock_repository.store_accession_map.assert_called_once_with(
-            accession_map=FILE_ACCESSION_MAP_EVENT
+            accession_map=FILE_ACCESSION_MAPS[0]
         )
 
         # Publish an outbox 'deleted' event

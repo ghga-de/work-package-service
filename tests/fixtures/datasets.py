@@ -25,20 +25,14 @@ from ghga_event_schemas.pydantic_ import (
     MetadataDatasetStage,
 )
 
-from wps.core.models import (
-    AccessionMapEventPayload,
-    Dataset,
-    DatasetFile,
-    FileAccessionMap,
-    WorkPackageType,
-)
+from wps.core.models import Dataset, DatasetFile, FileAccessionMap, WorkPackageType
 
 __all__ = [
     "DATASET",
     "DATASET_DELETION_EVENT",
     "DATASET_UPSERTION_EVENT",
     "FILE_ACCESSION_MAPS",
-    "FILE_ACCESSION_MAP_EVENT",
+    "FILE_ACCESSION_MAP_DOCS",
 ]
 
 
@@ -81,17 +75,15 @@ DATASET_UPSERTION_EVENT = MetadataDatasetOverview(
     ],
 )
 
-FILE_ACCESSION_MAP_EVENT = AccessionMapEventPayload(
-    {
-        "GHGA001": UUID("ed42650f-a683-4300-ad41-6d13e33b45eb"),
-        "GHGA002": UUID("abeffa71-37d0-4a4b-8b6d-c66e8a15af41"),
-        "GHGA003": UUID("d1038bd8-7a04-40ba-8a3d-9eb4146b02e9"),
-    }
-)
+FILE_ACCESSION_MAP_DOCS = [
+    {"_id": "GHGA001", "file_id": UUID("ed42650f-a683-4300-ad41-6d13e33b45eb")},
+    {"_id": "GHGA002", "file_id": UUID("abeffa71-37d0-4a4b-8b6d-c66e8a15af41")},
+    {"_id": "GHGA003", "file_id": UUID("d1038bd8-7a04-40ba-8a3d-9eb4146b02e9")},
+]
 
 FILE_ACCESSION_MAPS = [
-    FileAccessionMap(accession=accession, file_id=file_id)
-    for accession, file_id in FILE_ACCESSION_MAP_EVENT.model_dump().items()
+    FileAccessionMap(accession=doc["_id"], file_id=doc["file_id"])
+    for doc in FILE_ACCESSION_MAP_DOCS
 ]
 
 

@@ -22,10 +22,10 @@ from ghga_service_commons.auth.ghga import AuthContext
 from pydantic import UUID4
 
 from wps.core.models import (
-    AccessionMapEventPayload,
     BoxWithExpiration,
     Dataset,
     DatasetWithExpiration,
+    FileAccessionMap,
     ResearchDataUploadBoxBasics,
     UploadPathType,
     WorkPackage,
@@ -171,9 +171,7 @@ class WorkPackageRepositoryPort(ABC):
         """
 
     @abstractmethod
-    async def store_accession_map(
-        self, *, accession_map: AccessionMapEventPayload
-    ) -> None:
+    async def store_accession_map(self, *, accession_map: FileAccessionMap) -> None:
         """Store an accession map in the database"""
 
     @abstractmethod

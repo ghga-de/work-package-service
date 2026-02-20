@@ -45,7 +45,7 @@ from .fixtures import (  # noqa: F401
     non_mocked_hosts,
 )
 from .fixtures.crypt import decrypt, user_public_crypt4gh_key
-from .fixtures.datasets import DATASET, FILE_ACCESSION_MAP_EVENT
+from .fixtures.datasets import DATASET, FILE_ACCESSION_MAPS
 
 pytestmark = pytest.mark.asyncio()
 
@@ -227,7 +227,7 @@ async def test_make_download_work_order_token(
     assert wot_dict.pop("exp") - wot_dict.pop("iat") == 30
     assert wot_dict == {
         "work_type": "download",
-        "file_id": str(FILE_ACCESSION_MAP_EVENT.model_dump()["GHGA003"]),
+        "file_id": str(FILE_ACCESSION_MAPS[2].file_id),
         "accession": "GHGA003",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
