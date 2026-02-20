@@ -534,7 +534,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         If no such dataset exists, a DatasetNotFoundError will be raised.
         """
         try:
-            await self._dataset_dao.delete(id_=dataset_id)
+            await self._dataset_dao.delete(dataset_id)
         except ResourceNotFoundError as error:
             dataset_not_found_error = self.DatasetNotFoundError("Dataset not found")
             log.error(dataset_not_found_error, extra={"dataset_id": dataset_id})
@@ -602,7 +602,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         If no such box exists, an UploadBoxNotFoundError will be raised.
         """
         try:
-            await self._upload_box_dao.delete(id_=box_id)
+            await self._upload_box_dao.delete(box_id)
             log.info("Deleted UploadBox with ID %s", box_id)
         except ResourceNotFoundError:
             log.info(
