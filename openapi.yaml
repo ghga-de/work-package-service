@@ -194,6 +194,7 @@ components:
           title: File Ids
         type:
           $ref: '#/components/schemas/WorkPackageType'
+          description: The work package type
         user_public_crypt4gh_key:
           description: The user's public Crypt4GH key in base64 encoding
           title: User Public Crypt4Gh Key
@@ -259,6 +260,7 @@ components:
           title: Files
         type:
           $ref: '#/components/schemas/WorkPackageType'
+          description: The work package type
       required:
       - type
       - created
