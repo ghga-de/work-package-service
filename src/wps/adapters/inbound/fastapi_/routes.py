@@ -193,7 +193,7 @@ async def create_upload_work_order_token(
     wot_request: UploadWorkOrderTokenRequest,
     repository: WorkPackageRepositoryDummy,
     work_package_access_token: WorkPackageAccessToken,
-):
+) -> JSONResponse:
     try:
         if not (
             work_package_id and box_id and wot_request and work_package_access_token
