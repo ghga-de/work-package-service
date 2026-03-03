@@ -62,7 +62,7 @@ __all__ = [
     "WorkType",
 ]
 
-Accession = Annotated[str, StringConstraints(pattern=r"^GHGA.+")]
+FileAccession = Annotated[str, StringConstraints(pattern=r"^GHGAF.+")]
 
 
 class BaseDto(BaseModel):
