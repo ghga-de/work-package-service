@@ -81,7 +81,7 @@ class WorkPackageType(StrEnum):
 class DatasetFile(BaseDto):
     """A file as that is part of a dataset."""
 
-    id: str = Field(default=..., description="The file ID.")
+    accession: FileAccession = Field(default=..., description="The file accession.")
     extension: str = Field(
         default=..., description="The file extension with a leading dot."
     )
