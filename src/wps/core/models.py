@@ -133,7 +133,7 @@ class DownloadWorkOrder(BaseWorkOrderToken):
 
     work_type: DownloadPathType = "download"
     file_id: UUID4
-    accession: Accession
+    accession: FileAccession
 
 
 class ViewFileBoxWorkOrder(BaseWorkOrderToken):
