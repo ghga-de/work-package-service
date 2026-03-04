@@ -219,7 +219,7 @@ class AccessionMapOutboxTranslator(DaoSubscriberProtocol[FileAccessionMapping]):
         """Process an AccessionMap event."""
         log.info(
             "Received upsertion outbox event for AccessionMap for accession %s.",
-            resource_id,
+            update.accession,
         )
         await self._repository.store_accession_map(accession_map=update)
 
