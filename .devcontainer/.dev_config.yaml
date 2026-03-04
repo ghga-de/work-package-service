@@ -20,6 +20,7 @@ upload_box_topic: upload-boxes
 dataset_change_topic: metadata-datasets
 dataset_upsertion_type: dataset_created
 dataset_deletion_type: dataset_deleted
+accession_map_topic: accession-maps
 
 # the default keys are invalid but set for creating the example specs
 auth_key: "{}"
