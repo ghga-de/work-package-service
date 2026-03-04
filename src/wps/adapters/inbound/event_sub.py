@@ -33,7 +33,7 @@ from wps.constants import TRACER
 from wps.core.models import (
     Dataset,
     DatasetFile,
-    FileAccessionMap,
+    FileAccessionMapping,
     ResearchDataUploadBox,
     ResearchDataUploadBoxBasics,
     WorkPackageType,
@@ -114,7 +114,7 @@ class EventSubTranslator(EventSubscriberProtocol):
 
         files = [
             DatasetFile(
-                id=payload_file.accession,
+                accession=payload_file.accession,
                 extension=payload_file.file_extension,
                 # we don't need the file description here for now
             )
@@ -198,11 +198,11 @@ class RDUBOutboxTranslator(DaoSubscriberProtocol):
             await self._repository.delete_upload_box(UUID(resource_id))
 
 
-class AccessionMapOutboxTranslator(DaoSubscriberProtocol[FileAccessionMap]):
+class AccessionMapOutboxTranslator(DaoSubscriberProtocol[FileAccessionMapping]):
     """An outbox subscriber event translator for AccessionMap outbox events."""
 
     event_topic: str
-    dto_model = FileAccessionMap
+    dto_model = FileAccessionMapping
 
     def __init__(
         self,
@@ -215,7 +215,7 @@ class AccessionMapOutboxTranslator(DaoSubscriberProtocol[FileAccessionMap]):
         self._repository = work_package_repository
 
     @TRACER.start_as_current_span("AccessionMapOutboxTranslator.changed")
-    async def changed(self, resource_id: str, update: FileAccessionMap) -> None:
+    async def changed(self, resource_id: str, update: FileAccessionMapping) -> None:
         """Process an AccessionMap event."""
         log.info(
             "Received upsertion outbox event for AccessionMap for accession %s.",

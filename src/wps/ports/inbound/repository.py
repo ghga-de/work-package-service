@@ -25,7 +25,7 @@ from wps.core.models import (
     BoxWithExpiration,
     Dataset,
     DatasetWithExpiration,
-    FileAccessionMap,
+    FileAccessionMapping,
     ResearchDataUploadBoxBasics,
     UploadPathType,
     WorkPackage,
@@ -171,7 +171,7 @@ class WorkPackageRepositoryPort(ABC):
         """
 
     @abstractmethod
-    async def store_accession_map(self, *, accession_map: FileAccessionMap) -> None:
+    async def store_accession_map(self, *, accession_map: FileAccessionMapping) -> None:
         """Store an accession map in the database"""
 
     @abstractmethod

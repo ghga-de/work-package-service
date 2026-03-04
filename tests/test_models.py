@@ -53,10 +53,10 @@ def test_work_order_token():
     """Test instantiating a work order token model."""
     token = DownloadWorkOrder(
         file_id=uuid4(),
-        accession="GHGA001",
+        accession="GHGAF01",
         user_public_crypt4gh_key="some-public-key",
     )
-    assert token.accession == "GHGA001"
+    assert token.accession == "GHGAF01"
 
     with pytest.raises(ValueError):
         token = DownloadWorkOrder(

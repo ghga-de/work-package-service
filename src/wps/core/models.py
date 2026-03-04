@@ -37,7 +37,6 @@ from pydantic import (
 from wps.core.crypt import validate_public_key
 
 __all__ = [
-    "Accession",
     "BaseWorkOrderToken",
     "BoxWithExpiration",
     "CloseFileWorkOrder",
@@ -47,7 +46,8 @@ __all__ = [
     "DatasetWithExpiration",
     "DeleteFileWorkOrder",
     "DownloadWorkOrder",
-    "FileAccessionMap",
+    "FileAccession",
+    "FileAccessionMapping",
     "ResearchDataUploadBox",
     "ResearchDataUploadBoxBasics",
     "UploadFileWorkOrder",
@@ -324,7 +324,7 @@ class WorkPackageDetails(BaseModel):
         default=None,
         description="IDs of all included files mapped to their file extensions (None"
         + " for upload work packages)",
-        examples=[{"GHGA001": ".json", "GHGA002": ".csv"}],
+        examples=[{"GHGAF01": ".json", "GHGAF02": ".csv"}],
     )
     box_id: UUID4 | None = Field(
         default=None, description="ID of the upload box (for upload work packages)"
@@ -395,10 +395,10 @@ class UploadWorkOrderTokenRequest(BaseModel):
         return self
 
 
-class FileAccessionMap(BaseModel):
+class FileAccessionMapping(BaseModel):
     """A class used to associate a file ID with an accession number"""
 
-    accession: Accession = Field(
+    accession: FileAccession = Field(
         default=..., description="The accession number assigned to this file."
     )
     file_id: UUID4 = Field(

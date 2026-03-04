@@ -337,7 +337,7 @@ async def test_accession_outbox_consumer(config: Config, kafka: KafkaFixture):
             payload={},
             topic=config.accession_map_topic,
             type_="deleted",
-            key="GHGA001",
+            key="GHGAF01",
         )
 
         # Process the event
@@ -345,5 +345,5 @@ async def test_accession_outbox_consumer(config: Config, kafka: KafkaFixture):
 
         # Verify that delete_accession_map was called with the correct accession
         mock_repository.delete_accession_map.assert_called_once_with(
-            accession="GHGA001"
+            accession="GHGAF01"
         )

@@ -37,7 +37,7 @@ from wps.core.models import (
     DatasetWithExpiration,
     DeleteFileWorkOrder,
     DownloadWorkOrder,
-    FileAccessionMap,
+    FileAccessionMapping,
     ResearchDataUploadBoxBasics,
     UploadFileWorkOrder,
     UploadPathType,
@@ -205,7 +205,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(access_error, extra=extra)
             raise access_error from error
 
-        file_ids = [file.id for file in dataset.files]
+        file_ids = [file.accession for file in dataset.files]
         if creation_data.file_ids is not None:
             # if file_ids is not passed as None, restrict the file set
             file_id_set = set(creation_data.file_ids)
@@ -219,7 +219,9 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
         file_id_set = set(file_ids)
         files = {
-            file.id: file.extension for file in dataset.files if file.id in file_id_set
+            file.accession: file.extension
+            for file in dataset.files
+            if file.accession in file_id_set
         }
 
         return await self._create_work_package_record(
@@ -658,7 +660,7 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             upload_boxes_with_expiration.append(box_with_expiration)
         return upload_boxes_with_expiration
 
-    async def store_accession_map(self, *, accession_map: FileAccessionMap) -> None:
+    async def store_accession_map(self, *, accession_map: FileAccessionMapping) -> None:
         """Store an accession map in the database"""
         await self._accession_map_dao.upsert(accession_map)
         log.info(

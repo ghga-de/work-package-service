@@ -75,6 +75,6 @@ async def get_accession_map_dao(
     """Setup the DAOs using the specified provider of the DaoFactoryProtocol."""
     return await dao_factory.get_dao(
         name=config.accession_maps_collection,
-        dto_model=models.FileAccessionMap,
+        dto_model=models.FileAccessionMapping,
         id_field="accession",
     )

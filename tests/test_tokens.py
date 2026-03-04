@@ -70,7 +70,7 @@ def test_hash_token():
     [
         DownloadWorkOrder(
             file_id=uuid4(),
-            accession="GHGA001",
+            accession="GHGAF01",
             user_public_crypt4gh_key="some-public-key",
         ),
         CreateFileWorkOrder(

@@ -124,9 +124,9 @@ async def test_work_package_and_token_creation(
     assert package.dataset_id == "some-dataset-id"
     assert package.type == WorkPackageType.DOWNLOAD
     assert package.files == {
-        "GHGA001": ".json",
-        "GHGA002": ".csv",
-        "GHGA003": ".bam",
+        "GHGAF01": ".json",
+        "GHGAF02": ".csv",
+        "GHGAF03": ".bam",
     }
     assert package.user_public_crypt4gh_key == user_public_crypt4gh_key
     assert package.user_id == UUID(auth_context.id)
@@ -139,7 +139,7 @@ async def test_work_package_and_token_creation(
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=uuid4(),
-            accession="GHGA001",
+            accession="GHGAF01",
             work_package_access_token=wpat,
         )
 
@@ -153,7 +153,7 @@ async def test_work_package_and_token_creation(
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=work_package_id,
-            accession="GHGA001",
+            accession="GHGAF01",
             work_package_access_token="invalid-token",
         )
 
@@ -161,7 +161,7 @@ async def test_work_package_and_token_creation(
     with pytest.raises(repository.WorkPackageAccessError):
         wot = await repository.get_download_wot(
             work_package_id=work_package_id,
-            accession="GHGA003",
+            accession="GHGAF03",
             work_package_access_token=wpat,
         )
 
@@ -171,7 +171,7 @@ async def test_work_package_and_token_creation(
 
     wot = await repository.get_download_wot(
         work_package_id=work_package_id,
-        accession="GHGA003",
+        accession="GHGAF03",
         work_package_access_token=wpat,
     )
     assert wot is not None
@@ -183,7 +183,7 @@ async def test_work_package_and_token_creation(
     assert wot_claims == {
         "work_type": package.type.value,
         "file_id": str(FILE_ACCESSION_MAPS[2].file_id),
-        "accession": "GHGA003",
+        "accession": "GHGAF03",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
 
@@ -191,7 +191,7 @@ async def test_work_package_and_token_creation(
     creation_data = WorkPackageCreationData(
         dataset_id="some-dataset-id",
         type=WorkPackageType.DOWNLOAD,
-        file_ids=["GHGA001", "GHGA003", "non-existing-file"],
+        file_ids=["GHGAF01", "GHGAF03", "non-existing-file"],
         user_public_crypt4gh_key=user_public_crypt4gh_key,
     )
 
@@ -215,13 +215,13 @@ async def test_work_package_and_token_creation(
     with pytest.raises(repository.WorkPackageAccessError):
         await repository.get_download_wot(
             work_package_id=work_package_id,
-            accession="GHGA002",
+            accession="GHGAF02",
             work_package_access_token=wpat,
         )
 
     wot = await repository.get_download_wot(
         work_package_id=work_package_id,
-        accession="GHGA001",
+        accession="GHGAF01",
         work_package_access_token=wpat,
     )
     assert wot is not None
@@ -233,7 +233,7 @@ async def test_work_package_and_token_creation(
     assert wot_claims == {
         "work_type": package.type.value,
         "file_id": str(FILE_ACCESSION_MAPS[0].file_id),
-        "accession": "GHGA001",
+        "accession": "GHGAF01",
         "user_public_crypt4gh_key": user_public_crypt4gh_key,
     }
 
@@ -252,7 +252,7 @@ async def test_work_package_and_token_creation(
         with pytest.raises(repository.WorkPackageAccessError):
             await repository.get_download_wot(
                 work_package_id=work_package_id,
-                accession="GHGA001",
+                accession="GHGAF01",
                 work_package_access_token=wpat,
             )
     finally:
@@ -495,12 +495,12 @@ async def test_accession_maps(
     assert stored_accessions == expected_accessions
 
     # Delete an accession that doesn't exist. Should not raise an error.
-    await repository.delete_accession_map(accession="GHGA009")
+    await repository.delete_accession_map(accession="GHGAF09")
     stored_accessions = collection.find().sort("_id").to_list()
     assert stored_accessions == expected_accessions
 
     # Delete an accession that does exist, then verify that it's no longer in the DB.
-    await repository.delete_accession_map(accession="GHGA003")
+    await repository.delete_accession_map(accession="GHGAF03")
     stored_accessions = collection.find().sort("_id").to_list()
     del expected_accessions[-1]
     assert stored_accessions == expected_accessions

@@ -78,16 +78,17 @@ components:
       additionalProperties: false
       description: A file as that is part of a dataset.
       properties:
+        accession:
+          description: The file accession.
+          pattern: ^GHGAF.+
+          title: Accession
+          type: string
         extension:
           description: The file extension with a leading dot.
           title: Extension
           type: string
-        id:
-          description: The file ID.
-          title: Id
-          type: string
       required:
-      - id
+      - accession
       - extension
       title: DatasetFile
       type: object
@@ -255,8 +256,8 @@ components:
           description: IDs of all included files mapped to their file extensions (None
             for upload work packages)
           examples:
-          - GHGA001: .json
-            GHGA002: .csv
+          - GHGAF01: .json
+            GHGAF02: .csv
           title: Files
         type:
           $ref: '#/components/schemas/WorkPackageType'

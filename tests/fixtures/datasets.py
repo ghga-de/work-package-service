@@ -25,7 +25,7 @@ from ghga_event_schemas.pydantic_ import (
     MetadataDatasetStage,
 )
 
-from wps.core.models import Dataset, DatasetFile, FileAccessionMap, WorkPackageType
+from wps.core.models import Dataset, DatasetFile, FileAccessionMapping, WorkPackageType
 
 __all__ = [
     "DATASET",
@@ -42,9 +42,9 @@ DATASET = Dataset(
     stage=WorkPackageType.DOWNLOAD,
     description="The first test dataset",
     files=[
-        DatasetFile(id="GHGA001", extension=".json"),
-        DatasetFile(id="GHGA002", extension=".csv"),
-        DatasetFile(id="GHGA003", extension=".bam"),
+        DatasetFile(accession="GHGAF01", extension=".json"),
+        DatasetFile(accession="GHGAF02", extension=".csv"),
+        DatasetFile(accession="GHGAF03", extension=".bam"),
     ],
 )
 
@@ -58,17 +58,17 @@ DATASET_UPSERTION_EVENT = MetadataDatasetOverview(
     dac_email="dac@some.org",
     files=[
         MetadataDatasetFile(
-            accession="GHGA001",
+            accession="GHGAF01",
             description="The first file",
             file_extension=".json",
         ),
         MetadataDatasetFile(
-            accession="GHGA002",
+            accession="GHGAF02",
             description="The second file",
             file_extension=".csv",
         ),
         MetadataDatasetFile(
-            accession="GHGA003",
+            accession="GHGAF03",
             description="The third file",
             file_extension=".bam",
         ),
@@ -76,13 +76,13 @@ DATASET_UPSERTION_EVENT = MetadataDatasetOverview(
 )
 
 FILE_ACCESSION_MAP_DOCS: list[dict] = [
-    {"_id": "GHGA001", "file_id": UUID("ed42650f-a683-4300-ad41-6d13e33b45eb")},
-    {"_id": "GHGA002", "file_id": UUID("abeffa71-37d0-4a4b-8b6d-c66e8a15af41")},
-    {"_id": "GHGA003", "file_id": UUID("d1038bd8-7a04-40ba-8a3d-9eb4146b02e9")},
+    {"_id": "GHGAF01", "file_id": UUID("ed42650f-a683-4300-ad41-6d13e33b45eb")},
+    {"_id": "GHGAF02", "file_id": UUID("abeffa71-37d0-4a4b-8b6d-c66e8a15af41")},
+    {"_id": "GHGAF03", "file_id": UUID("d1038bd8-7a04-40ba-8a3d-9eb4146b02e9")},
 ]
 
 FILE_ACCESSION_MAPS = [
-    FileAccessionMap(accession=doc["_id"], file_id=doc["file_id"])
+    FileAccessionMapping(accession=doc["_id"], file_id=doc["file_id"])
     for doc in FILE_ACCESSION_MAP_DOCS
 ]
 
