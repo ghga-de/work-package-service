@@ -151,23 +151,22 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.error(access_error)
             raise access_error from error
 
-        dataset_id = creation_data.dataset_id
-        rdub_id = creation_data.research_data_upload_box_id
-
         match creation_data.type:
             case WorkPackageType.DOWNLOAD:
                 return await self._create_download_work_package(
                     creation_data,
                     auth_context,
                     user_id,
-                    dataset_id,  # type: ignore
+                    # validator guarantees that the dataset ID is not None
+                    creation_data.dataset_id,  # type: ignore[arg-type]
                 )
             case WorkPackageType.UPLOAD:
                 return await self._create_upload_work_package(
                     creation_data,
                     auth_context,
                     user_id,
-                    rdub_id,  # type: ignore
+                    # validator guarantees that the box ID is not None
+                    creation_data.research_data_upload_box_id,  # type: ignore[arg-type]
                 )
 
     async def _create_download_work_package(
