@@ -16,7 +16,7 @@ kafka_enable_dlq: True
 
 access_url: "http://127.0.0.1:8080"
 
-upload_box_topic: upload-boxes
+research_data_upload_box_topic: upload-boxes
 dataset_change_topic: metadata-datasets
 dataset_upsertion_type: dataset_created
 dataset_deletion_type: dataset_deleted
