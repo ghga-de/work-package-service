@@ -318,19 +318,11 @@ The service requires the following configuration parameters:
   5
   ```
 
-- <a id="properties/upload_box_topic"></a>**`upload_box_topic`** *(string, required)*: Name of the event topic containing research data upload box events.
+- <a id="properties/research_data_upload_box_topic"></a>**`research_data_upload_box_topic`** *(string, required)*: Name of the event topic containing research data upload box events.
 
   Examples:
   ```json
   "research-data-upload-boxes"
-  ```
-
-  ```json
-  "rdu-boxes"
-  ```
-
-  ```json
-  "rdubs"
   ```
 
 - <a id="properties/accession_map_topic"></a>**`accession_map_topic`** *(string, required)*: The name of the topic used for file accession map events.
