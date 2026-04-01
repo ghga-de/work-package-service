@@ -81,7 +81,7 @@ class WorkPackageConfig(BaseSettings):
         "workPackages",
         description="The name of the database collection for work packages",
     )
-    accession_maps_collection: str = Field(
+    alt_accessions_collection: str = Field(
         "accessionMaps",
         description="The name of the database collection for file accession maps",
     )

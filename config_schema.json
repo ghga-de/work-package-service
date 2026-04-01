@@ -84,10 +84,10 @@
       "title": "Work Packages Collection",
       "type": "string"
     },
-    "accession_maps_collection": {
+    "alt_accessions_collection": {
       "default": "accessionMaps",
       "description": "The name of the database collection for file accession maps",
-      "title": "Accession Maps Collection",
+      "title": "Alt Accessions Collection",
       "type": "string"
     },
     "work_package_valid_days": {

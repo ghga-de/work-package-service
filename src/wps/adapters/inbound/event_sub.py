@@ -43,6 +43,7 @@ from wps.core.models import (
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
 
 __all__ = [
+    "AltAccessionOutboxTranslator",
     "EventSubTranslator",
     "EventSubTranslatorConfig",
     "OutboxSubConfig",

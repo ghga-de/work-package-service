@@ -477,7 +477,7 @@ async def test_accession_maps(
     config: Config, repository: WorkPackageRepository, mongodb: MongoDbFixture
 ):
     """Test storing and deleting accession maps"""
-    collection = mongodb.client[config.db_name][config.accession_maps_collection]
+    collection = mongodb.client[config.db_name][config.alt_accessions_collection]
 
     # First verify nothing is in the collection
     assert not collection.find().to_list()

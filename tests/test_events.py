@@ -307,22 +307,22 @@ async def test_rudb_outbox_consumer(config: Config, kafka: KafkaFixture):
 
 
 async def test_accession_outbox_consumer(config: Config, kafka: KafkaFixture):
-    """Test consuming an 'upserted' & 'deleted' accession map event in the outbox consumer."""
+    """Test consuming an 'upserted' & 'deleted' AltAccession event in the outbox consumer."""
     # Create a mock repository to track calls
     mock_repository = AsyncMock()
-    accession_map_event_payload = FILE_ACCESSION_MAPS[0].model_dump(mode="json")
+    alt_accession_payload = FILE_ACCESSION_MAPS[0].model_dump(mode="json")
     # Create a consumer with the mock repository
     async with prepare_consumer(
         config=config, work_package_repo_override=mock_repository
     ) as consumer:
         subscriber = consumer.event_subscriber
 
-        # Publish an outbox 'upserted' event for an accession map
+        # Publish an outbox 'upserted' event for an AltAccession
         await kafka.publish_event(
-            payload=accession_map_event_payload,
+            payload=alt_accession_payload,
             topic=config.alt_accession_topic,
             type_="upserted",
-            key="",
+            key=FILE_ACCESSION_MAPS[0].pid,
         )
 
         # Process the event

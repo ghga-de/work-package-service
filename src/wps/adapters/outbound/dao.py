@@ -72,9 +72,9 @@ async def get_upload_box_dao(
 async def get_accession_map_dao(
     *, config: WorkPackageConfig, dao_factory: DaoFactoryProtocol
 ) -> AccessionMapDaoPort:
-    """Setup the DAOs using the specified provider of the DaoFactoryProtocol."""
+    """Setup the DAO using the specified provider of the DaoFactoryProtocol."""
     return await dao_factory.get_dao(
-        name=config.accession_maps_collection,
+        name=config.alt_accessions_collection,
         dto_model=models.AltAccession,
         id_field="pid",
     )
