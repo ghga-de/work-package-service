@@ -320,7 +320,7 @@ async def test_accession_outbox_consumer(config: Config, kafka: KafkaFixture):
         # Publish an outbox 'upserted' event for an accession map
         await kafka.publish_event(
             payload=accession_map_event_payload,
-            topic=config.accession_map_topic,
+            topic=config.alt_accession_topic,
             type_="upserted",
             key="",
         )
@@ -336,7 +336,7 @@ async def test_accession_outbox_consumer(config: Config, kafka: KafkaFixture):
         # Publish an outbox 'deleted' event
         await kafka.publish_event(
             payload={},
-            topic=config.accession_map_topic,
+            topic=config.alt_accession_topic,
             type_="deleted",
             key="GHGAF01",
         )

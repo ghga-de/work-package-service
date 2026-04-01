@@ -325,15 +325,11 @@ The service requires the following configuration parameters:
   "research-data-upload-boxes"
   ```
 
-- <a id="properties/accession_map_topic"></a>**`accession_map_topic`** *(string, required)*: The name of the topic used for file accession map events.
+- <a id="properties/alt_accession_topic"></a>**`alt_accession_topic`** *(string, required)*: The name of the topic used for AltAccession events.
 
   Examples:
   ```json
-  "accession-maps"
-  ```
-
-  ```json
-  "file-accession-maps"
+  "alt-accessions"
   ```
 
 - <a id="properties/dataset_change_topic"></a>**`dataset_change_topic`** *(string, required)*: Name of the topic announcing, among other things, the list of files included in a new dataset.

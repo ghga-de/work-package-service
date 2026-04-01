@@ -36,6 +36,8 @@ from pydantic import (
 from wps.core.crypt import validate_public_key
 
 __all__ = [
+    "AltAccession",
+    "AltAccessionType",
     "BaseWorkOrderToken",
     "BoxWithExpiration",
     "CloseFileWorkOrder",
@@ -46,7 +48,6 @@ __all__ = [
     "DeleteFileWorkOrder",
     "DownloadWorkOrder",
     "FileAccession",
-    "FileAccessionMapping",
     "ResearchDataUploadBoxBasics",
     "UploadFileWorkOrder",
     "UploadPathType",
@@ -363,12 +364,18 @@ class UploadWorkOrderTokenRequest(BaseModel):
         return self
 
 
-class FileAccessionMapping(BaseModel):
-    """A class used to associate a file ID with an accession number"""
+class AltAccessionType(StrEnum):
+    """Kinds of alternative accessions."""
 
-    accession: FileAccession = Field(
-        default=..., description="The accession number assigned to this file."
-    )
-    file_id: UUID4 = Field(
-        default=..., description="Unique identifier for the file upload"
-    )
+    EGA = "EGA"
+    FILE_ID = "FILE_ID"
+    GHGA_LEGACY = "GHGA_LEGACY"
+
+
+class AltAccession(BaseModel):
+    """Stores alternative accessions referencing a primary accession."""
+
+    id: str
+    pid: str
+    type: AltAccessionType
+    created: UTCDatetime
