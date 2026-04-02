@@ -37,7 +37,6 @@ from wps.core.crypt import validate_public_key
 
 __all__ = [
     "AltAccession",
-    "AltAccessionType",
     "BaseWorkOrderToken",
     "BoxWithExpiration",
     "CloseFileWorkOrder",
@@ -364,18 +363,24 @@ class UploadWorkOrderTokenRequest(BaseModel):
         return self
 
 
-class AltAccessionType(StrEnum):
-    """Kinds of alternative accessions."""
-
-    EGA = "EGA"
-    FILE_ID = "FILE_ID"
-    GHGA_LEGACY = "GHGA_LEGACY"
-
-
 class AltAccession(BaseModel):
     """Stores alternative accessions referencing a primary accession."""
 
-    id: str
-    pid: str
-    type: AltAccessionType
-    created: UTCDatetime
+    id: str = Field(..., description="The UUID4 file identifier used by file services")
+    pid: str = Field(
+        ..., description="The public-facing permanent accession number for the file"
+    )
+    type: str = Field(
+        ...,
+        description=(
+            "An enumerated string describing the type of accession. WPS is only"
+            + " interested in AltAccessions where the type is 'FILE_ID'."
+        ),
+    )
+    created: UTCDatetime = Field(
+        ...,
+        description=(
+            "The timestamp for when the AltAccession was originally created"
+            + " in the GHGA Registry Service"
+        ),
+    )

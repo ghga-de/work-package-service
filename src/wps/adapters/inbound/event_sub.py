@@ -34,7 +34,6 @@ from pydantic import Field
 from wps.constants import TRACER
 from wps.core.models import (
     AltAccession,
-    AltAccessionType,
     Dataset,
     DatasetFile,
     ResearchDataUploadBoxBasics,
@@ -43,6 +42,7 @@ from wps.core.models import (
 from wps.ports.inbound.repository import WorkPackageRepositoryPort
 
 __all__ = [
+    "FILE_ID_TYPE",
     "AltAccessionOutboxTranslator",
     "EventSubTranslator",
     "EventSubTranslatorConfig",
@@ -51,6 +51,8 @@ __all__ = [
 ]
 
 log = logging.getLogger(__name__)
+
+FILE_ID_TYPE = "FILE_ID"
 
 
 class EventSubTranslatorConfig(DatasetEventsConfig):
@@ -216,7 +218,7 @@ class AltAccessionOutboxTranslator(DaoSubscriberProtocol[AltAccession]):
     @TRACER.start_as_current_span("AltAccessionOutboxTranslator.changed")
     async def changed(self, resource_id: str, update: AltAccession) -> None:
         """Process an AltAccession event."""
-        if update.type == AltAccessionType.FILE_ID:
+        if update.type == FILE_ID_TYPE:
             log.info(
                 "Received upsertion outbox event for AltAccession for accession %s.",
                 resource_id,

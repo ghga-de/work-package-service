@@ -25,9 +25,9 @@ from ghga_event_schemas.pydantic_ import (
     MetadataDatasetStage,
 )
 
+from wps.adapters.inbound.event_sub import FILE_ID_TYPE
 from wps.core.models import (
     AltAccession,
-    AltAccessionType,
     Dataset,
     DatasetFile,
     WorkPackageType,
@@ -105,9 +105,7 @@ FILE_ACCESSION_MAP_DOCS: list[dict] = [
 ]
 
 FILE_ACCESSION_MAPS = [
-    AltAccession(
-        pid=doc["_id"], id=doc["id"], type=AltAccessionType.FILE_ID, created=_CREATED
-    )
+    AltAccession(pid=doc["_id"], id=doc["id"], type=FILE_ID_TYPE, created=_CREATED)
     for doc in FILE_ACCESSION_MAP_DOCS
 ]
 

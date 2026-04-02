@@ -29,7 +29,7 @@ from hexkit.providers.mongodb.testutils import MongoDbFixture
 from hexkit.utils import now_utc_ms_prec
 
 from wps.config import Config
-from wps.core.models import AltAccession, AltAccessionType, ResearchDataUploadBoxBasics
+from wps.core.models import AltAccession, ResearchDataUploadBoxBasics
 from wps.prepare import Consumer, prepare_consumer
 
 from .fixtures import (  # noqa: F401
@@ -358,7 +358,7 @@ async def test_non_file_id_alt_accession_event_is_ignored(
     non_file_id_accession = AltAccession(
         pid="GHGAF01",
         id="ed42650f-a683-4300-ad41-6d13e33b45eb",
-        type=AltAccessionType.EGA,
+        type="EGA",
         created=FILE_ACCESSION_MAPS[0].created,
     )
     async with prepare_consumer(
