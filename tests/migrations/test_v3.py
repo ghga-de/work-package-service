@@ -49,6 +49,10 @@ CORRECT_FILES = [
 CORRECT_DATASET = deepcopy(TEST_DATASET)
 CORRECT_DATASET["files"] = CORRECT_FILES
 
+# A dataset already in the new format (as if it was migrated in a prior partial run)
+ALREADY_MIGRATED_DATASET = deepcopy(CORRECT_DATASET)
+ALREADY_MIGRATED_DATASET["_id"] = "GHGAD87516091803761"
+
 
 async def test_migration_v3(config, mongodb: MongoDbFixture):
     """Test the migration to DB version 3 and reversion to DB version 2."""
@@ -75,3 +79,29 @@ async def test_migration_v3(config, mongodb: MongoDbFixture):
     reverted = collection.find_one({"_id": TEST_DATASET["_id"]})
     assert reverted is not None
     assert reverted == TEST_DATASET
+
+
+async def test_migration_v3_partial(config, mongodb: MongoDbFixture):
+    """Test that the v3 migration handles partially migrated data idempotently.
+
+    If one dataset is already in the new format (accession) and another is still in the
+    old format (id), the migration should transform the old one and leave the new one
+    unchanged.
+    """
+    db = mongodb.client[config.db_name]
+    collection = db[config.datasets_collection]
+    collection.delete_many({})
+
+    # One dataset in old format, one already in new format
+    collection.insert_many([deepcopy(TEST_DATASET), deepcopy(ALREADY_MIGRATED_DATASET)])
+
+    await run_db_migrations(config=config, target_version=2)
+    await run_db_migrations(config=config, target_version=3)
+
+    old_migrated = collection.find_one({"_id": TEST_DATASET["_id"]})
+    assert old_migrated is not None
+    assert old_migrated == CORRECT_DATASET
+
+    already_migrated = collection.find_one({"_id": ALREADY_MIGRATED_DATASET["_id"]})
+    assert already_migrated is not None
+    assert already_migrated == ALREADY_MIGRATED_DATASET
