@@ -39,11 +39,11 @@ async def run_db_migrations(
     - `migration_map`: Mapping of version to migration definition. Defaults to `MIGRATION_MAP`.
     `migration_map` can be specified for testing, but may be left unspecified for production.
     """
-    migration_map = migration_map or MIGRATION_MAP
+    migration_map = migration_map or MIGRATION_MAP  # type: ignore[assignment]
 
     async with MigrationManager(
         config=config,
         target_version=target_version,
-        migration_map=MIGRATION_MAP,
+        migration_map=MIGRATION_MAP,  # type: ignore[arg-type]
     ) as mm:
         await mm.migrate_or_wait()
