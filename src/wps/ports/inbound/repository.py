@@ -43,6 +43,9 @@ class WorkPackageRepositoryPort(ABC):
     class DatasetNotFoundError(RuntimeError):
         """Error that is raised when a dataset does not exist."""
 
+    class WorkPackageNotFoundError(RuntimeError):
+        """Error that is raised when a work package does not exist."""
+
     class UploadBoxNotFoundError(RuntimeError):
         """Error that is raised when an upload box does not exist."""
 
@@ -151,10 +154,18 @@ class WorkPackageRepositoryPort(ABC):
         """Register a research data upload box."""
 
     @abstractmethod
-    async def delete_upload_box(self, box_id: UUID4) -> None:
-        """Delete a research data upload box with the given ID.
+    async def delete(self, work_package_id: UUID4) -> None:
+        """Delete the work package with the given ID.
 
-        If no such box exists, an UploadBoxNotFoundError will be raised.
+        If no such work package exists, a WorkPackageNotFoundError is raised.
+        """
+
+    @abstractmethod
+    async def delete_upload_box(self, box_id: UUID4) -> None:
+        """Delete a research data upload box with the given ID, plus all linked Work
+        Packages.
+
+        If no such box exists, it is treated as if it was already successfully deleted.
         """
 
     @abstractmethod

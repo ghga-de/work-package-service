@@ -545,6 +545,19 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         signed_wot = sign_work_order_token(work_order, self._signing_key)
         return encrypt(signed_wot, user_public_crypt4gh_key)
 
+    async def delete(self, work_package_id: UUID4) -> None:
+        """Delete the work package with the given ID.
+
+        If no such work package exists, a WorkPackageNotFoundError is raised.
+        """
+        try:
+            await self._dao.delete(work_package_id)
+        except ResourceNotFoundError as error:
+            not_found_error = self.WorkPackageNotFoundError("Work package not found")
+            log.error(not_found_error, extra={"work_package_id": work_package_id})
+            raise not_found_error from error
+        log.info("Deleted work package with ID %s", work_package_id)
+
     async def register_dataset(self, dataset: Dataset) -> None:
         """Register a dataset with all of its files."""
         await self._dataset_dao.upsert(dataset)
@@ -618,9 +631,10 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
         log.info("Upserted UploadBox with ID %s", upload_box.id)
 
     async def delete_upload_box(self, box_id: UUID4) -> None:
-        """Delete a research data upload box with the given ID.
+        """Delete a research data upload box with the given ID, plus all linked Work
+        Packages.
 
-        If no such box exists, an UploadBoxNotFoundError will be raised.
+        If no such box exists, it is treated as if it was already successfully deleted.
         """
         try:
             await self._upload_box_dao.delete(box_id)
@@ -629,6 +643,11 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
             log.info(
                 "UploadBox with ID %s not found, presumed already deleted.", box_id
             )
+        async for work_package in self._dao.find_all(
+            mapping={"research_data_upload_box_id": box_id}
+        ):
+            with suppress(self.WorkPackageNotFoundError):
+                await self.delete(work_package.id)
 
     async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBoxBasics:
         """Get a registered research data upload box using the given ID.
