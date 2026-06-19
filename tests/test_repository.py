@@ -386,7 +386,7 @@ async def test_delete_work_package(
     assert work_package.id == work_package_id
 
     # Delete the work package
-    await repository.delete(work_package_id)
+    await repository._delete_work_package(work_package_id)
 
     # A deleted work package should no longer be retrievable
     with pytest.raises(repository.WorkPackageAccessError):
@@ -394,11 +394,17 @@ async def test_delete_work_package(
 
 
 async def test_delete_work_package_not_found(
-    repository: WorkPackageRepository, mongodb: MongoDbFixture
+    repository: WorkPackageRepository, mongodb: MongoDbFixture, caplog
 ):
-    """Test that deleting a non-existent work package raises WorkPackageNotFoundError."""
-    with pytest.raises(repository.WorkPackageNotFoundError):
-        await repository.delete(uuid4())
+    """Test that deleting a non-existent work package logs a warning."""
+    wp_id = uuid4()
+    caplog.clear()
+    with caplog.at_level("WARNING"):
+        await repository._delete_work_package(wp_id)
+    expected_warning = (
+        f"Did not find a work package with the ID {wp_id}, presumed already deleted."
+    )
+    assert expected_warning in caplog.messages
 
 
 async def test_delete_upload_box_also_deletes_work_packages(
