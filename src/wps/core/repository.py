@@ -649,13 +649,13 @@ class WorkPackageRepository(WorkPackageRepositoryPort):
 
         # Get a list of affected work package IDs and then delete them
         work_package_ids = [
-            w
-            async for w in self._dao.find_all(
+            work_package.id
+            async for work_package in self._dao.find_all(
                 mapping={"research_data_upload_box_id": box_id}
             )
         ]
-        for work_package in work_package_ids:
-            await self._delete_work_package(work_package.id)
+        for work_package_id in work_package_ids:
+            await self._delete_work_package(work_package_id)
 
     async def get_upload_box(self, box_id: UUID4) -> ResearchDataUploadBoxBasics:
         """Get a registered research data upload box using the given ID.
