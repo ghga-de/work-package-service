@@ -54,7 +54,6 @@ __all__ = [
     "fixture_config",
     "fixture_repository",
     "headers_for_token",
-    "non_mocked_hosts",
 ]
 
 AUTH_KEY_PAIR = generate_jwk()
@@ -145,9 +144,3 @@ async def fixture_client(config: Config) -> AsyncGenerator[AsyncTestClient]:
     async with prepare_rest_app(config=config) as app:
         async with AsyncTestClient(app=app) as client:
             yield client
-
-
-@pytest.fixture
-def non_mocked_hosts() -> list[str]:
-    """Get hosts that are not mocked by pytest-httpx."""
-    return ["test", "localhost"]
