@@ -162,6 +162,8 @@ async def fixture_client(
         AccessCheckAdapter.construct, transport=access_api.as_transport()
     )
     with patch("wps.prepare.AccessCheckAdapter.construct", mocked_construct):
-        async with prepare_rest_app(config=config) as app:
-            async with AsyncTestClient(app=app) as client:
-                yield client
+        async with (
+            prepare_rest_app(config=config) as app,
+            AsyncTestClient(app=app) as client,
+        ):
+            yield client
