@@ -63,10 +63,17 @@ class AccessCheckAdapter(AccessCheckPort):
     @classmethod
     @asynccontextmanager
     async def construct(
-        cls, *, config: AccessCheckConfig
+        cls,
+        *,
+        config: AccessCheckConfig,
+        transport: httpx2.AsyncBaseTransport | None = None,
     ) -> AsyncGenerator["AccessCheckAdapter"]:
-        """Setup AccessGrantsAdapter with the given config."""
-        async with httpx2.AsyncClient(timeout=TIMEOUT) as client:
+        """Setup AccessGrantsAdapter with the given config.
+
+        `transport` replaces the transport that actually performs the requests.
+        It is meant for tests, which can supply a mock transport instead.
+        """
+        async with httpx2.AsyncClient(timeout=TIMEOUT, transport=transport) as client:
             yield cls(config=config, client=client)
 
     @TRACER.start_as_current_span("AccessCheckAdapter.check_download_access")

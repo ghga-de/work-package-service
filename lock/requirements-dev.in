@@ -5,7 +5,3 @@
 
 # additional requirements can be listed here
 testcontainers[kafka,mongo]>=4.14,<4.15
-
-# mocking of httpx2 requests (the template still provides httpx/pytest-httpx)
-pytest-httpx2>=1.0
-respx>=0.23
